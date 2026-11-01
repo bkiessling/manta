@@ -30,10 +30,12 @@ function animationProgress(time, duration, animation) {
     case "bounce": {
       const stiffness = animation.stiffness ?? 90;
       const damping = animation.damping ?? 15;
+      const frequency = Math.sqrt(
+        Math.max(1, stiffness)
+      );
 
-      const frequency = Math.sqrt(stiffness);
       const decay =
-        damping *
+        Math.max(1, damping) *
         (animation.style === "bounce" ? 0.25 : 0.5);
 
       return clamp(
@@ -60,7 +62,9 @@ function drawRing(
   end,
   color
 ) {
-  if (end - start <= 0.001) return;
+  const sweep = Math.min(end - start, 359.999);
+
+  if (sweep <= 0.001) return;
 
   ctx.beginPath();
   ctx.arc(
@@ -68,16 +72,15 @@ function drawRing(
     cy,
     radius,
     radians(start),
-    radians(end)
+    radians(start + sweep)
   );
-
   ctx.strokeStyle = color;
   ctx.lineWidth = thickness;
   ctx.lineCap = "butt";
   ctx.stroke();
 }
 
-function drawSegmentGap(
+function eraseGap(
   ctx,
   cx,
   cy,
@@ -97,7 +100,6 @@ function drawSegmentGap(
     cx + Math.cos(direction) * (outerRadius + 2),
     cy + Math.sin(direction) * (outerRadius + 2)
   );
-
   ctx.lineWidth = gap;
   ctx.stroke();
 }
@@ -108,7 +110,10 @@ function drawLabels(
   cx,
   cy,
   outerRadius,
-  labels
+  labels,
+  time,
+  duration,
+  animation
 ) {
   if (!labels.showCategory && !labels.showValue) {
     return;
@@ -122,7 +127,32 @@ function drawLabels(
   ctx.font = `600 ${fontSize}px Arial, sans-serif`;
 
   for (const segment of segments) {
-    if (segment.percentage <= 0) continue;
+    if (
+      segment.percentage <= 0 ||
+      segment.visible === false
+    ) {
+      continue;
+    }
+
+    const labelDelay =
+      duration *
+      ((segment.end - segments[0].start) / 360);
+
+    const isSpring =
+      animation.style === "spring" ||
+      animation.style === "bounce";
+
+    const startTime = isSpring
+      ? labelDelay
+      : labelDelay;
+
+    const opacity = clamp(
+      (time - startTime) / 0.35,
+      0,
+      1
+    );
+
+    if (opacity <= 0) continue;
 
     const middle =
       (segment.start + segment.end) / 2;
@@ -135,6 +165,9 @@ function drawLabels(
 
     const y =
       cy + Math.sin(radians(middle)) * distance;
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
 
     if (labels.showCategory && labels.showValue) {
       ctx.fillText(
@@ -161,6 +194,8 @@ function drawLabels(
         y
       );
     }
+
+    ctx.restore();
   }
 }
 
@@ -183,6 +218,7 @@ function renderFrame(ctx, data, settings, time, duration) {
     outerRadius * (appearance.thickness / 100);
 
   const innerRadius = outerRadius - thickness;
+
   const middleRadius =
     outerRadius - thickness / 2;
 
@@ -222,13 +258,15 @@ function renderFrame(ctx, data, settings, time, duration) {
       middleRadius,
       thickness,
       rotation,
-      rotation + Math.min(sweep, 359.999),
+      rotation + sweep,
       item.color ?? "#a855f7"
     );
 
     return;
   }
 
+  // Alle Kategorien zählen zur Summe,
+  // auch die ausgeblendeten.
   const total = data.reduce(
     (sum, item) =>
       sum + Math.max(0, Number(item.value) || 0),
@@ -263,8 +301,15 @@ function renderFrame(ctx, data, settings, time, duration) {
   const visibleEnd =
     rotation + progress * 360;
 
+  // Versteckte Kategorien überspringen,
+  // ohne ihren Winkelbereich zu entfernen.
   for (const segment of segments) {
-    if (segment.percentage <= 0) continue;
+    if (
+      segment.percentage <= 0 ||
+      segment.visible === false
+    ) {
+      continue;
+    }
 
     drawRing(
       ctx,
@@ -278,17 +323,39 @@ function renderFrame(ctx, data, settings, time, duration) {
     );
   }
 
-  // Trennlinien aus dem Alpha-Kanal entfernen.
   const gap = appearance.gap ?? 0;
 
   if (gap > 0) {
     ctx.save();
-    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalCompositeOperation =
+      "destination-out";
 
-    for (const segment of segments) {
-      if (segment.percentage <= 0) continue;
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
 
-      drawSegmentGap(
+      if (
+        segment.percentage <= 0 ||
+        segment.visible === false
+      ) {
+        continue;
+      }
+
+      const previous =
+        segments[
+          (i - 1 + segments.length) %
+            segments.length
+        ];
+
+      // Keine Trennlinie an einem bereits
+      // transparenten Abschnitt nötig.
+      if (
+        previous.percentage <= 0 ||
+        previous.visible === false
+      ) {
+        continue;
+      }
+
+      eraseGap(
         ctx,
         cx,
         cy,
@@ -302,41 +369,32 @@ function renderFrame(ctx, data, settings, time, duration) {
     ctx.restore();
   }
 
-  const isSpring =
-    animation.style === "spring" ||
-    animation.style === "bounce";
-
-  const labelStart = isSpring ? 0.7 : duration;
-
-  const labelOpacity = clamp(
-    (time - labelStart) / 0.35,
-    0,
-    1
-  );
-
-  ctx.save();
-  ctx.globalAlpha = labelOpacity;
-
   drawLabels(
     ctx,
     segments,
     cx,
     cy,
     outerRadius,
-    labels
+    labels,
+    time,
+    duration,
+    animation
   );
-
-  ctx.restore();
 }
 
 function canvasToBlob(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        if (blob) resolve(blob);
-        else reject(
-          new Error("PNG-Frame konnte nicht erzeugt werden.")
-        );
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(
+            new Error(
+              "PNG-Frame konnte nicht erzeugt werden."
+            )
+          );
+        }
       },
       "image/png"
     );
@@ -348,6 +406,12 @@ export async function exportMov({
   settings,
   onProgress,
 }) {
+  if (!settings) {
+    throw new Error(
+      "Keine Diagrammeinstellungen vorhanden."
+    );
+  }
+
   const canvas = document.createElement("canvas");
 
   canvas.width = WIDTH;
@@ -358,7 +422,9 @@ export async function exportMov({
   });
 
   if (!ctx) {
-    throw new Error("Canvas ist nicht verfügbar.");
+    throw new Error(
+      "Canvas ist nicht verfügbar."
+    );
   }
 
   ctx.scale(
@@ -368,8 +434,6 @@ export async function exportMov({
 
   const style = settings.animation.style;
 
-  // Spring/Bounce bekommen vorerst eine feste
-  // Laufzeit. Die exakte Motion-Kurve folgt später.
   const duration =
     style === "spring" || style === "bounce"
       ? 2
@@ -378,7 +442,6 @@ export async function exportMov({
           Number(settings.animation.duration) || 2
         );
 
-  // 0,35 Sekunden für das Einblenden der Labels.
   const totalDuration = duration + 0.35;
 
   const frameCount = Math.ceil(
@@ -400,14 +463,16 @@ export async function exportMov({
 
     const blob = await canvasToBlob(canvas);
 
-    const name = `frame_${String(
+    const filename = `frame_${String(
       i + 1
     ).padStart(5, "0")}.png`;
 
-    zip.file(name, blob);
+    zip.file(filename, blob);
 
     onProgress?.(
-      Math.round(((i + 1) / frameCount) * 65)
+      Math.round(
+        ((i + 1) / frameCount) * 65
+      )
     );
 
     if (i % 5 === 0) {
@@ -448,7 +513,7 @@ export async function exportMov({
     );
   } catch {
     throw new Error(
-      "Export-Server nicht erreichbar. Starte npm run server."
+      "Export-Server nicht erreichbar. Prüfe npm run server."
     );
   }
 
@@ -458,7 +523,8 @@ export async function exportMov({
       .catch(() => ({}));
 
     throw new Error(
-      body.error ?? "MOV-Export fehlgeschlagen."
+      body.error ??
+        "MOV-Export fehlgeschlagen."
     );
   }
 

@@ -12,27 +12,54 @@ import {
   createDonutSegment,
 } from "./donutUtils";
 
-function getAnimationTransition(style, duration, delay) {
-  if (style === "spring") {
-    return {
-      type: "spring",
-      stiffness: 90,
-      damping: 15,
-      mass: 1,
-      delay,
-    };
+import { formatChartValue } from "../../utils/formatChartValue";
+
+const MAX_SEGMENT_ANGLE = 359.999;
+
+const clamp = (value, min, max) =>
+  Math.max(min, Math.min(max, value));
+
+function getSpringDuration(speed) {
+  const normalized =
+    Math.max(0, Math.min(100, speed)) / 100;
+
+  return 8 - normalized * 7.4;
+}
+
+function springProgress(time, bounce) {
+  const strength = clamp(bounce, 0, 100) / 100;
+
+  if (strength === 0) {
+    return 1 - Math.pow(1 - time, 3);
   }
 
-  if (style === "bounce") {
-    return {
-      type: "spring",
-      stiffness: 140,
-      damping: 9,
-      mass: 0.9,
-      delay,
-    };
-  }
+  const oscillations = 1.5 + strength * 1.5;
+  const decay = 7 - strength * 4;
 
+  const envelope = Math.exp(-decay * time);
+
+  const oscillation = Math.cos(
+    time * Math.PI * 2 * oscillations
+  );
+
+  const raw = 1 - envelope * oscillation;
+
+  const endEnvelope = Math.exp(-decay);
+  const endOscillation = Math.cos(
+    Math.PI * 2 * oscillations
+  );
+
+  const endValue =
+    1 - endEnvelope * endOscillation;
+
+  return raw / endValue;
+}
+
+function getAnimationTransition(
+  style,
+  duration,
+  delay = 0
+) {
   if (style === "easeInOut") {
     return {
       type: "tween",
@@ -70,39 +97,76 @@ function AnimatedSegment({
   duration,
   delay = 0,
   animationStyle = "linear",
+  speed = 50,
+  bounce = 35,
   playAnimation = false,
 }) {
-  const animatedAngle = useMotionValue(
-    playAnimation ? startAngle : endAngle
+  const isSpring =
+    animationStyle === "spring";
+
+  const progress = useMotionValue(
+    playAnimation ? 0 : 1
+  );
+
+  const segmentAngle = Math.max(
+    0,
+    endAngle - startAngle
   );
 
   const path = useTransform(
-    animatedAngle,
-    (currentAngle) =>
-      createDonutSegment(
+    progress,
+    (currentProgress) => {
+      const safeProgress = Math.max(
+        0,
+        currentProgress
+      );
+
+      const currentAngle = Math.min(
+        segmentAngle * safeProgress,
+        MAX_SEGMENT_ANGLE
+      );
+
+      return createDonutSegment(
         cx,
         cy,
         outerRadius,
         innerRadius,
         startAngle,
-        Math.max(
-          startAngle,
-          Math.min(currentAngle, startAngle + 359.999)
-        )
-      )
+        startAngle + currentAngle
+      );
+    }
   );
 
   useEffect(() => {
     if (!playAnimation) {
-      animatedAngle.set(endAngle);
+      progress.set(1);
       return;
     }
 
-    animatedAngle.set(startAngle);
+    progress.set(0);
+
+    if (isSpring) {
+      const springDuration =
+        getSpringDuration(speed);
+
+      const controls = animate(
+        progress,
+        1,
+        {
+          type: "tween",
+          duration: springDuration,
+          delay,
+          ease: (time) =>
+            springProgress(time, bounce),
+        }
+      );
+
+      return () => controls.stop();
+    }
 
     const controls = animate(
-      animatedAngle,
-      endAngle,
+      progress,
+      1,
       getAnimationTransition(
         animationStyle,
         duration,
@@ -112,26 +176,33 @@ function AnimatedSegment({
 
     return () => controls.stop();
   }, [
-    animatedAngle,
-    startAngle,
-    endAngle,
+    progress,
     duration,
     delay,
     animationStyle,
+    speed,
+    bounce,
     playAnimation,
+    isSpring,
   ]);
 
-  return <motion.path d={path} fill={color} />;
+  return (
+    <motion.path
+      d={path}
+      fill={color}
+    />
+  );
 }
 
 export default function Donut({
   data = [],
-  mode = "distribution",
   thickness = 24,
   gap = 3,
   size = 120,
   duration = 2,
   animationStyle = "linear",
+  speed = 50,
+  bounce = 35,
   positionX = 50,
   positionY = 35,
   rotation = 0,
@@ -139,16 +210,20 @@ export default function Donut({
   showValue = true,
   labelFontSize = 12,
   labelDistance = 24,
+  valueFormat = "percent",
   playAnimation = false,
 }) {
   const canvasWidth = 360;
   const canvasHeight = 640;
 
-  const cx = canvasWidth * (positionX / 100);
-  const cy = canvasHeight * (positionY / 100);
+  const cx =
+    canvasWidth * (positionX / 100);
 
-  const maxRadius = 240;
-  const outerRadius = (size / 100) * maxRadius;
+  const cy =
+    canvasHeight * (positionY / 100);
+
+  const outerRadius =
+    (size / 100) * 240;
 
   const thicknessValue =
     outerRadius * (thickness / 100);
@@ -156,54 +231,12 @@ export default function Donut({
   const innerRadius =
     outerRadius - thicknessValue;
 
-  /* =====================================
-     PROGRESS DONUT
-     ===================================== */
-
-  if (mode === "progress") {
-    const item = data[0];
-
-    const percentage = Math.min(
-      100,
-      Math.max(0, Number(item?.value) || 0)
-    );
-
-    const endAngle =
-      rotation + (percentage / 100) * 359.999;
-
-    return (
-      <div className="donut">
-        <svg
-          viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {item && percentage > 0 && (
-            <AnimatedSegment
-              key="progress"
-              cx={cx}
-              cy={cy}
-              outerRadius={outerRadius}
-              innerRadius={innerRadius}
-              startAngle={rotation}
-              endAngle={endAngle}
-              color={item.color}
-              duration={duration}
-              animationStyle={animationStyle}
-              playAnimation={playAnimation}
-            />
-          )}
-        </svg>
-      </div>
-    );
-  }
-
-  /* =====================================
-     DISTRIBUTION DONUT
-     ===================================== */
-
+  // Ausgeblendete Kategorien zählen
+  // weiterhin zur Gesamtsumme.
   const total = data.reduce(
     (sum, item) =>
-      sum + Math.max(0, Number(item.value) || 0),
+      sum +
+      Math.max(0, Number(item.value) || 0),
     0
   );
 
@@ -219,6 +252,7 @@ export default function Donut({
       total > 0 ? value / total : 0;
 
     const startAngle = currentAngle;
+
     const endAngle =
       currentAngle + percentage * 360;
 
@@ -226,11 +260,25 @@ export default function Donut({
 
     return {
       ...item,
+      value,
       startAngle,
       endAngle,
       percentage,
+      isVisible: item.visible !== false,
     };
   });
+
+  const drawnSegments = segments.filter(
+    (segment) =>
+      segment.percentage > 0 &&
+      segment.isVisible
+  );
+
+  const effectiveAnimationStyle =
+    animationStyle === "spring" &&
+    drawnSegments.length !== 1
+      ? "easeOut"
+      : animationStyle;
 
   return (
     <div className="donut">
@@ -238,17 +286,18 @@ export default function Donut({
         viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
         preserveAspectRatio="xMidYMid meet"
       >
-        {segments.map((segment, index) => {
-          if (segment.percentage <= 0) {
-            return null;
-          }
+        {drawnSegments.map((segment, index) => {
+          const isSpring =
+            effectiveAnimationStyle === "spring";
 
-          const segmentDuration =
-            duration * segment.percentage;
+          const segmentDuration = isSpring
+            ? duration
+            : duration * segment.percentage;
 
-          const segmentDelay =
-            duration *
-            ((segment.startAngle - rotation) / 360);
+          const segmentDelay = isSpring
+            ? 0
+            : duration *
+              ((segment.startAngle - rotation) / 360);
 
           return (
             <AnimatedSegment
@@ -262,14 +311,34 @@ export default function Donut({
               color={segment.color}
               duration={segmentDuration}
               delay={segmentDelay}
-              animationStyle={animationStyle}
+              animationStyle={
+                effectiveAnimationStyle
+              }
+              speed={speed}
+              bounce={bounce}
               playAnimation={playAnimation}
             />
           );
         })}
 
-        {segments.map((segment, index) => {
-          if (segment.percentage <= 0) {
+        {drawnSegments.map((segment, index) => {
+          if (gap <= 0) return null;
+
+          const originalIndex =
+            segments.indexOf(segment);
+
+          const previousSegment =
+            segments[
+              (originalIndex - 1 +
+                segments.length) %
+                segments.length
+            ];
+
+          if (
+            !previousSegment ||
+            previousSegment.percentage <= 0 ||
+            !previousSegment.isVisible
+          ) {
             return null;
           }
 
@@ -303,29 +372,35 @@ export default function Donut({
         })}
 
         {(showCategory || showValue) &&
-          segments.map((segment, index) => {
-            if (segment.percentage <= 0) {
-              return null;
-            }
-
+          drawnSegments.map((segment, index) => {
             const middleAngle =
               (segment.startAngle +
                 segment.endAngle) /
               2;
 
-            const labelRadius =
-              outerRadius + labelDistance;
-
-            const labelPoint = polarToCartesian(
-              cx,
-              cy,
-              labelRadius,
-              middleAngle
-            );
+            const labelPoint =
+              polarToCartesian(
+                cx,
+                cy,
+                outerRadius + labelDistance,
+                middleAngle
+              );
 
             const labelDelay =
               duration *
-              ((segment.endAngle - rotation) / 360);
+              ((segment.endAngle - rotation) /
+                360);
+
+            const displayedValue =
+              valueFormat === "percent"
+                ? formatChartValue(
+                    segment.percentage * 100,
+                    "percent"
+                  )
+                : formatChartValue(
+                    segment.value,
+                    "number"
+                  );
 
             return (
               <motion.text
@@ -377,10 +452,7 @@ export default function Donut({
                         : "0"
                     }
                   >
-                    {Math.round(
-                      segment.percentage * 100
-                    )}
-                    %
+                    {displayedValue}
                   </tspan>
                 )}
               </motion.text>

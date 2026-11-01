@@ -1,14 +1,15 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { chartData } from "./data/chartData";
 import { chartPresets } from "./data/chartPresets";
 
 import Donut from "./charts/donut/Donut";
+import Welle from "./charts/welle/Welle";
+import Explosion from "./charts/explosion/Explosion";
 
 import DataSection from "./components/sidebar/DataSection";
 import ChartSection from "./components/sidebar/ChartSection";
-import DiagramOptionsSection from "./components/sidebar/DiagramOptionsSection";
 import LabelsSection from "./components/sidebar/LabelsSection";
 import AppearanceSection from "./components/sidebar/AppearanceSection";
 import AnimationSection from "./components/sidebar/AnimationSection";
@@ -22,15 +23,30 @@ import mantaRay from "./assets/manta_ray.svg";
 import "./App.css";
 
 const MODES = [
-  { id: "diagram", label: "Diagramm", number: "01" },
-  { id: "data", label: "Daten", number: "02" },
-  { id: "editor", label: "Editor", number: "03" },
-  { id: "export", label: "Export", number: "04" },
+  {
+    id: "diagram",
+    label: "Diagramm",
+    number: "01",
+  },
+  {
+    id: "data",
+    label: "Daten",
+    number: "02",
+  },
+  {
+    id: "editor",
+    label: "Editor",
+    number: "03",
+  },
+  {
+    id: "export",
+    label: "Export",
+    number: "04",
+  },
 ];
 
 export default function App() {
   const [mode, setMode] = useState("diagram");
-
   const [onboardingStep, setOnboardingStep] =
     useState("diagram");
 
@@ -38,18 +54,11 @@ export default function App() {
   const [playAnimation, setPlayAnimation] =
     useState(false);
 
-  const [chartType, setChartType] = useState("donut");
+  const [chartType, setChartType] =
+    useState("donut");
 
   const [chartDatasets, setChartDatasets] =
     useState(chartData);
-
-  const [progressData, setProgressData] = useState([
-    {
-      category: "Fortschritt",
-      value: 75,
-      color: "#a855f7",
-    },
-  ]);
 
   const [chartSettings, setChartSettings] =
     useState(() =>
@@ -65,29 +74,37 @@ export default function App() {
 
   const preset = chartPresets[chartType];
   const settings = chartSettings[chartType];
+  const data = chartDatasets[chartType] ?? [];
 
-  const diagramMode =
-    settings?.diagram?.mode ?? "distribution";
+  const visibleCategoryCount = data.filter(
+    (item) =>
+      item.visible !== false &&
+      Number(item.value) > 0
+  ).length;
 
-  const isProgress =
-    chartType === "donut" &&
-    diagramMode === "progress";
-
-  const data = isProgress
-    ? progressData
-    : chartDatasets[chartType] ?? [];
+  useEffect(() => {
+    if (
+      settings?.animation?.style === "spring" &&
+      visibleCategoryCount !== 1
+    ) {
+      setChartSettings((current) => ({
+        ...current,
+        [chartType]: {
+          ...current[chartType],
+          animation: {
+            ...current[chartType].animation,
+            style: "easeOut",
+          },
+        },
+      }));
+    }
+  }, [
+    chartType,
+    settings?.animation?.style,
+    visibleCategoryCount,
+  ]);
 
   const setData = (value) => {
-    if (isProgress) {
-      setProgressData((current) =>
-        typeof value === "function"
-          ? value(current)
-          : value
-      );
-
-      return;
-    }
-
     setChartDatasets((current) => ({
       ...current,
       [chartType]:
@@ -98,7 +115,12 @@ export default function App() {
   };
 
   const addRow = () => {
-    if (isProgress) return;
+    if (
+      preset?.data?.maxRows != null &&
+      data.length >= preset.data.maxRows
+    ) {
+      return;
+    }
 
     setData((current) => [
       ...current,
@@ -106,12 +128,18 @@ export default function App() {
         category: "Neue Kategorie",
         value: 10,
         color: "#a855f7",
+        visible: true,
       },
     ]);
   };
 
   const deleteRow = (indexToDelete) => {
-    if (isProgress) return;
+    if (
+      data.length <=
+      (preset?.data?.minRows ?? 1)
+    ) {
+      return;
+    }
 
     setData((current) =>
       current.filter(
@@ -139,6 +167,18 @@ export default function App() {
     }));
   };
 
+  const updateFormat = (value) => {
+    if (!settings) return;
+
+    setChartSettings((current) => ({
+      ...current,
+      [chartType]: {
+        ...current[chartType],
+        format: value,
+      },
+    }));
+  };
+
   const updateChartPosition = (x, y) => {
     setChartSettings((current) => ({
       ...current,
@@ -153,11 +193,6 @@ export default function App() {
     }));
   };
 
-  const setDiagramMode = (value) => {
-    setPlayAnimation(false);
-    updateSetting("diagram", "mode", value);
-  };
-
   const changeChartType = (value) => {
     setPlayAnimation(false);
     setChartType(value);
@@ -170,7 +205,10 @@ export default function App() {
       return;
     }
 
-    if (value === "editor" || value === "export") {
+    if (
+      value === "editor" ||
+      value === "export"
+    ) {
       setOnboardingStep("complete");
       setPlayAnimation(true);
       setReplay((current) => current + 1);
@@ -195,32 +233,6 @@ export default function App() {
     setPlayAnimation(true);
     setReplay((current) => current + 1);
   };
-
-  const dataEditor = preset ? (
-    <DataSection
-      data={data}
-      setData={setData}
-      addRow={addRow}
-      deleteRow={deleteRow}
-      mode={
-        isProgress
-          ? "progress"
-          : "distribution"
-      }
-      minRows={1}
-      maxRows={
-        isProgress
-          ? 1
-          : preset.data?.maxRows ?? null
-      }
-      minValue={0}
-      maxValue={
-        isProgress
-          ? 100
-          : preset.data?.maxValue ?? null
-      }
-    />
-  ) : null;
 
   const showOnboarding =
     onboardingStep !== "complete";
@@ -250,7 +262,9 @@ export default function App() {
               key={item.id}
               type="button"
               className={`nav-button ${
-                mode === item.id ? "active" : ""
+                mode === item.id
+                  ? "active"
+                  : ""
               }`}
               onClick={() => changeMode(item.id)}
               aria-current={
@@ -262,6 +276,7 @@ export default function App() {
               <span className="nav-number">
                 {item.number}
               </span>
+
               <span>{item.label}</span>
             </button>
           ))}
@@ -276,7 +291,9 @@ export default function App() {
         <aside className="sidebar sidebar-left">
           <div className="panel-heading">
             <span className="eyebrow">
-              {activeMode?.label.toUpperCase()}
+              {MODES.find(
+                (item) => item.id === mode
+              )?.label.toUpperCase()}
             </span>
 
             <h2>
@@ -298,34 +315,49 @@ export default function App() {
             />
           )}
 
-          {mode === "data" && dataEditor}
+          {mode === "data" && preset && (
+            <DataSection
+              data={data}
+              setData={setData}
+              addRow={addRow}
+              deleteRow={deleteRow}
+              mode="distribution"
+              minRows={preset.data?.minRows ?? 1}
+              maxRows={preset.data?.maxRows ?? null}
+              minValue={preset.data?.minValue ?? 0}
+              maxValue={preset.data?.maxValue ?? null}
+            />
+          )}
 
           {mode === "editor" &&
             settings &&
             preset && (
               <AnimationSection
+                chartType={chartType}
                 animation={settings.animation}
-                animationOptions={
-                  preset.options.animation
-                }
+                animationOptions={preset.options.animation}
                 updateSetting={updateSetting}
+                visibleCategoryCount={
+                  chartType === "donut"
+                    ? visibleCategoryCount
+                    : 0
+                }
               />
             )}
 
-          {mode === "export" && settings && (
-            <ExportSection
-              data={data}
-              settings={settings}
-              chartType={chartType}
-            />
-          )}
+          {mode === "export" &&
+            settings && (
+              <ExportSection
+                data={data}
+                settings={settings}
+                chartType={chartType}
+              />
+            )}
         </aside>
 
         <section className="workspace">
           <div className="workspace-topline">
-            <span>
-              Live Preview · 9:16
-            </span>
+            <span>Live Preview · 9:16</span>
           </div>
 
           <div className="preview-stage">
@@ -347,7 +379,13 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="phone-preview">
+              <div
+                className="phone-preview"
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
                 {showOnboarding ? (
                   <OnboardingPreview
                     step={onboardingStep}
@@ -359,51 +397,57 @@ export default function App() {
                       chartType === "donut" && (
                         <DraggableChart
                           positionX={
-                            settings.appearance.positionX
+                            settings.appearance
+                              .positionX
                           }
                           positionY={
-                            settings.appearance.positionY
+                            settings.appearance
+                              .positionY
                           }
                           size={
                             settings.appearance.size
                           }
                           thickness={
-                            settings.appearance.thickness
+                            settings.appearance
+                              .thickness
                           }
                           onPositionChange={
                             updateChartPosition
                           }
                         >
                           <Donut
-                            key={`${chartType}-${diagramMode}-${replay}`}
+                            key={`${chartType}-${replay}`}
                             data={data}
-                            mode={diagramMode}
-                            playAnimation={
-                              playAnimation
-                            }
+                            playAnimation={playAnimation}
                             size={
                               settings.appearance.size
                             }
                             positionX={
-                              settings.appearance.positionX
+                              settings.appearance
+                                .positionX
                             }
                             positionY={
-                              settings.appearance.positionY
+                              settings.appearance
+                                .positionY
                             }
                             thickness={
-                              settings.appearance.thickness
+                              settings.appearance
+                                .thickness
                             }
                             gap={
                               settings.appearance.gap
                             }
                             rotation={
-                              settings.appearance.rotation
+                              settings.appearance
+                                .rotation
                             }
                             showCategory={
-                              settings.labels.showCategory
+                              settings.labels
+                                .showCategory
                             }
                             showValue={
-                              settings.labels.showValue
+                              settings.labels
+                                .showValue
                             }
                             labelFontSize={
                               settings.labels.fontSize
@@ -411,26 +455,102 @@ export default function App() {
                             labelDistance={
                               settings.labels.distance
                             }
+                            valueFormat={
+                              settings.format
+                            }
                             duration={
-                              settings.animation.duration
+                              settings.animation
+                                .duration
                             }
                             animationStyle={
                               settings.animation.style
                             }
-                            stiffness={
-                              settings.animation.stiffness ?? 90
+                            speed={
+                              settings.animation
+                                .speed ?? 50
                             }
-                            damping={
-                              settings.animation.damping ?? 15
+                            bounce={
+                              settings.animation
+                                .bounce ?? 35
                             }
                           />
                         </DraggableChart>
                       )}
 
-                    {chartType !== "donut" && (
+                    {settings &&
+                      chartType === "welle" && (
+                        <Welle
+                          key={`${chartType}-${replay}`}
+                          data={data}
+                          playAnimation={playAnimation}
+                          duration={
+                            settings.animation
+                              .duration
+                          }
+                          animationStyle={
+                            settings.animation.style
+                          }
+                          waveHeight={
+                            settings.appearance
+                              .waveHeight
+                          }
+                          waveSpeed={
+                            settings.appearance
+                              .waveSpeed
+                          }
+                          showCategory={
+                            settings.labels
+                              .showCategory
+                          }
+                          showValue={
+                            settings.labels.showValue
+                          }
+                          labelFontSize={
+                            settings.labels.fontSize
+                          }
+                          valueFormat={
+                            settings.format
+                          }
+                        />
+                      )}
+
+                    {settings &&
+                      chartType === "explosion" && (
+                        <Explosion
+                          key={`${chartType}-${replay}`}
+                          data={data}
+                          playAnimation={playAnimation}
+                          duration={
+                            settings.animation
+                              .duration
+                          }
+                          animationStyle={
+                            settings.animation.style
+                          }
+                          size={
+                            settings.appearance.size
+                          }
+                          growth={
+                            settings.appearance.growth
+                          }
+                          particleCount={
+                            settings.appearance
+                              .particleCount
+                          }
+                          valueFormat={
+                            settings.format
+                          }
+                        />
+                      )}
+
+                    {![
+                      "donut",
+                      "welle",
+                      "explosion",
+                    ].includes(chartType) && (
                       <div className="preview-empty">
-                        Für diesen Diagrammtyp gibt
-                        es noch keine Vorschau.
+                        Für diesen Diagrammtyp
+                        gibt es noch keine Vorschau.
                       </div>
                     )}
                   </>
@@ -459,27 +579,87 @@ export default function App() {
           </div>
 
           {mode === "diagram" &&
-            chartType === "donut" &&
-            settings && (
-              <DiagramOptionsSection
-                diagramMode={diagramMode}
-                setDiagramMode={setDiagramMode}
-              />
-            )}
-
-          {mode === "diagram" &&
-            chartType !== "donut" && (
+            ![
+              "donut",
+              "welle",
+              "explosion",
+            ].includes(chartType) && (
               <div className="panel-note">
-                Für diesen Diagrammtyp gibt
-                es noch keine Optionen.
+                Für diesen Diagrammtyp
+                gibt es noch keine Optionen.
               </div>
             )}
 
-          {mode === "data" && (
-            <div className="panel-note">
-              {isProgress
-                ? "Lege den Fortschrittswert zwischen 0 und 100 % fest."
-                : "Bearbeite links Kategorien, Werte und Farben."}
+          {mode === "data" && settings && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-title">
+                FORMAT
+              </div>
+
+              <div className="section-content">
+                <div
+                  role="radiogroup"
+                  aria-label="Format"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="value-format"
+                      value="number"
+                      checked={
+                        settings.format === "number"
+                      }
+                      onChange={() =>
+                        updateFormat("number")
+                      }
+                    />
+                    Zahl
+                  </label>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="value-format"
+                      value="percent"
+                      checked={
+                        settings.format === "percent"
+                      }
+                      onChange={() =>
+                        updateFormat("percent")
+                      }
+                    />
+                    Prozent
+                  </label>
+                </div>
+
+                <p
+                  className="panel-note"
+                  style={{ marginTop: "16px" }}
+                >
+                  {chartType === "donut"
+                    ? "Bei Prozent wird der Anteil an der Gesamtsumme angezeigt."
+                    : "Das Format verändert nur die Anzeige, nicht den eingegebenen Wert."}
+                </p>
+              </div>
             </div>
           )}
 
@@ -487,20 +667,16 @@ export default function App() {
             <>
               <AppearanceSection
                 chartType={chartType}
-                appearance={
-                  settings.appearance
-                }
-                updateSetting={
-                  updateSetting
-                }
+                appearance={settings.appearance}
+                updateSetting={updateSetting}
               />
 
-              <LabelsSection
-                labels={settings.labels}
-                updateSetting={
-                  updateSetting
-                }
-              />
+              {chartType !== "explosion" && (
+                <LabelsSection
+                  labels={settings.labels}
+                  updateSetting={updateSetting}
+                />
+              )}
             </>
           )}
 

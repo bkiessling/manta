@@ -316,7 +316,206 @@
     min-width: 0;
     margin-top: 16px;
   }
-  
+
+
+/* MANTA – Animations-Dropdown */
+
+.animation-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 42px 0 14px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  color: #f5f0ff;
+  background-color: #211a30;
+
+  border: 1px solid #433554;
+  border-radius: 10px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  /* Eigener Dropdown-Pfeil */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23bda9d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+
+.animation-select:hover {
+  background-color: #2a203b;
+  border-color: #75569b;
+}
+
+.animation-select:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.12);
+}
+
+.animation-select option {
+  color: #f5f0ff;
+  background-color: #211a30;
+  padding: 10px;
+}
+
+.animation-select option:disabled {
+  color: #766b85;
+}
+
+
+/* ---------------------------------------
+   MANTA Custom Animation Dropdown
+--------------------------------------- */
+
+.animation-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.animation-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 42px;
+  padding: 0 14px;
+
+  color: #f5f0ff;
+  background: #211a30;
+
+  border: 1px solid #433554;
+  border-radius: 10px;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.animation-dropdown-trigger:hover {
+  background: #2a203b;
+  border-color: #75569b;
+}
+
+.animation-dropdown-trigger:focus-visible,
+.animation-dropdown.is-open
+  .animation-dropdown-trigger {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow:
+    0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+.animation-dropdown-chevron {
+  flex-shrink: 0;
+  color: #bda9d4;
+
+  transition: transform 0.2s ease;
+}
+
+.animation-dropdown.is-open
+  .animation-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+/* Geöffnetes Menü */
+
+.animation-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  padding: 6px;
+
+  background: #292331;
+  border: 1px solid #50405f;
+  border-radius: 12px;
+
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Einzelne Menüeinträge */
+
+.animation-dropdown-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+
+  color: #e8e1ee;
+  background: transparent;
+
+  border: none;
+  border-radius: 7px;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.animation-dropdown-option:not(:disabled):hover,
+.animation-dropdown-option:not(:disabled):focus-visible {
+  color: #ffffff;
+  background: #49315e;
+  outline: none;
+}
+
+.animation-dropdown-option.is-selected {
+  color: #d6b1ff;
+  background: rgba(168, 85, 247, 0.12);
+}
+
+.animation-dropdown-option.is-selected svg {
+  flex-shrink: 0;
+  color: #b56aff;
+}
+
+.animation-dropdown-option.is-disabled {
+  color: #766b80;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 
 /* ==================================================
    DIAGRAM MODE SWITCH
@@ -627,6 +826,160 @@
     border-color: var(--accent);
     background: var(--accent-glow);
   }
+
+
+/* HEX-Farbeditor im Daten-Tab */
+
+.data-color-editor {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+
+.data-color-trigger {
+  display: block;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.data-color-trigger:hover {
+  border-color: var(--accent-bright);
+}
+
+.data-color-trigger:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.data-color-popover {
+  position: absolute;
+  z-index: 50;
+  top: 34px;
+  right: 0;
+  width: 190px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: #201b2c;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.data-color-popover-title {
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.data-color-popover-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.data-color-picker {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 34px;
+  padding: 2px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.data-color-hex {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.data-color-hex:focus {
+  outline: none;
+  border-color: var(--accent-bright);
+}
+
+.data-color-popover-hint {
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+
+  /* ==================================================
+   DATA VISIBILITY TOGGLE
+   ================================================== */
+
+.data-header-with-visibility,
+.data-row-with-visibility {
+  grid-template-columns:
+    minmax(0, 1fr)
+    56px
+    28px
+    28px
+    24px;
+}
+
+.visibility-button {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+
+  color: var(--text-muted);
+
+  transition:
+    color 160ms ease,
+    background 160ms ease;
+}
+
+.visibility-button svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.visibility-button:hover {
+  color: var(--accent-bright);
+  background: var(--accent-glow);
+}
+
+.visibility-button.is-hidden {
+  color: var(--accent-bright);
+}
+
+.visibility-button:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.data-row-hidden input[type="text"],
+.data-row-hidden input[type="number"] {
+  opacity: 0.45;
+}
+
+.data-row-hidden .data-color {
+  opacity: 0.45;
+}
   
   /* ==================================================
      CONTROLS
