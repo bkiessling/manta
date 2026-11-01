@@ -10,19 +10,19 @@ const chartTypes = [
     label: "Balken",
     icon: "bar",
   },
-  { value: "group", label: "Gruppe", icon: "group" },
+  {
+    value: "welle",
+    label: "Welle",
+    icon: "welle",
+  },
+  {
+    value: "explosion",
+    label: "Explosion",
+    icon: "explosion",
+  },
 ];
 
 function ChartIcon({ type }) {
-  if (type === "group") {
-    return <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-      {[7, 16, 25].map((x) => <g key={x}>
-        <circle cx={x} cy="8" r="3" />
-        <rect x={x - 3} y="13" width="6" height="9" rx="2" />
-        <path d={`M${x - 3} 20h2v9h-2zM${x + 1} 20h2v9h-2z`} />
-      </g>)}
-    </svg>;
-  }
   if (type === "donut") {
     return (
       <svg
@@ -92,6 +92,59 @@ function ChartIcon({ type }) {
     );
   }
 
+  if (type === "welle") {
+    return (
+      <svg
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M3 15 C7 10 11 10 16 15
+             S25 20 29 15"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M3 20 C7 15 11 15 16 20
+             S25 25 29 20
+             V29 H3 Z"
+          fill="currentColor"
+          opacity="0.75"
+        />
+      </svg>
+    );
+  }
+
+  if (type === "explosion") {
+    return (
+      <svg
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M16 2 L19 11 L28 6
+             L23 15 L31 19
+             L21 21 L23 30
+             L16 24 L9 30
+             L11 21 L1 19
+             L9 15 L4 6
+             L13 11 Z"
+          fill="currentColor"
+          opacity="0.8"
+        />
+        <circle
+          cx="16"
+          cy="17"
+          r="4"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
   return null;
 }
 
@@ -107,7 +160,8 @@ export default function ChartSection({
         aria-label="Diagrammtyp auswählen"
       >
         {chartTypes.map((chart) => {
-          const isActive = chart.value === chartType;
+          const isActive =
+            chart.value === chartType;
 
           return (
             <button
@@ -116,7 +170,9 @@ export default function ChartSection({
               className={`chart-type-button ${
                 isActive ? "active" : ""
               }`}
-              onClick={() => setChartType(chart.value)}
+              onClick={() =>
+                setChartType(chart.value)
+              }
               aria-pressed={isActive}
             >
               <span className="chart-type-icon">

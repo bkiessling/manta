@@ -1,43 +1,26 @@
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { exportMov } from "../../utils/exportMov";
-
-const PHASES = {
-  preparing: "Export vorbereiten",
-  rendering: "Bilder vorbereiten und übertragen",
-  uploading: "Bilder vorbereiten und übertragen",
-  encoding: "Video erstellen",
-  downloading: "Download starten",
-  finished: "Download gestartet",
-};
 
 export default function ExportSection({
   data,
   settings,
   chartType,
-  updateSetting,
 }) {
   const [isExporting, setIsExporting] =
     useState(false);
 
-  const [progress, setProgress] = useState({ phase: "preparing", percent: 0 });
-  const controllerRef = useRef(null);
-  const [cancelled, setCancelled] = useState(false);
-
-  useEffect(() => () => controllerRef.current?.abort(), []);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [finished, setFinished] = useState(false);
 
   const handleExport = async () => {
-    if (controllerRef.current) {
+    if (isExporting || chartType !== "donut") {
       return;
     }
 
-    const controller = new AbortController();
-    controllerRef.current = controller;
     setIsExporting(true);
-    setCancelled(false);
-    setProgress({ phase: "preparing", percent: 0 });
+    setProgress(0);
     setError("");
     setFinished(false);
 
@@ -45,20 +28,17 @@ export default function ExportSection({
       await exportMov({
         data,
         settings,
-        chartType,
         onProgress: setProgress,
-        signal: controller.signal,
       });
 
       setFinished(true);
     } catch (err) {
-      if (controller.signal.aborted || err?.name === "AbortError") {
-        setCancelled(true);
-      } else setError(
+      console.error(err);
+
+      setError(
         err?.message ?? "Export fehlgeschlagen."
       );
     } finally {
-      controllerRef.current = null;
       setIsExporting(false);
     }
   };
@@ -94,21 +74,9 @@ export default function ExportSection({
         <div className="control">
           <div className="control-header">
             <span>HINTERGRUND</span>
-            <span>{settings.output?.transparent !== false ? "TRANSPARENT" : settings.output.backgroundColor}</span>
+            <span>TRANSPARENT</span>
           </div>
         </div>
-
-        <label className="checkbox-control">
-          <span>TRANSPARENTER HINTERGRUND</span>
-          <input type="checkbox" checked={settings.output?.transparent !== false} disabled={isExporting}
-            onChange={(event) => updateSetting("output", "transparent", event.target.checked)} />
-        </label>
-        {settings.output?.transparent === false && <label className="control">
-          <span className="control-header">HINTERGRUNDFARBE</span>
-          <input type="color" aria-label="Export-Hintergrundfarbe" disabled={isExporting}
-            value={settings.output.backgroundColor || "#f5f5f3"}
-            onChange={(event) => updateSetting("output", "backgroundColor", event.target.value)} />
-        </label>}
 
         <div
           className="panel-note"
@@ -117,9 +85,10 @@ export default function ExportSection({
             marginBottom: 18,
           }}
         >
-          Exportiere deine Animation für Premiere Pro.
-          Transparenz oder gewählte Hintergrundfarbe sowie verschobene Beschriftungen
-          werden wie in der Vorschau übernommen.
+          Exportiere deine Animation mit
+          Alphakanal für Premiere Pro.
+          Der Hintergrund der Vorschau
+          wird nicht mit exportiert.
         </div>
 
         <button
@@ -127,7 +96,7 @@ export default function ExportSection({
           className="nav-button"
           onClick={handleExport}
           disabled={
-            isExporting
+            isExporting || chartType !== "donut"
           }
           style={{
             width: "100%",
@@ -146,14 +115,14 @@ export default function ExportSection({
         >
           <span>
             {isExporting
-              ? `EXPORTIERE ... ${progress.percent}%`
+              ? `EXPORTIERE ... ${progress}%`
               : "↓ MOV EXPORTIEREN"}
           </span>
         </button>
 
         {isExporting && (
           <progress
-            value={progress.percent}
+            value={progress}
             max={100}
             style={{
               display: "block",
@@ -164,20 +133,6 @@ export default function ExportSection({
           />
         )}
 
-        {isExporting && (
-          <>
-            <p role="status" aria-live="polite" style={{ fontSize: 12, marginTop: 12 }}>
-              {PHASES[progress.phase]} · {progress.percent}%
-              {progress.detail && <span style={{ display: "block" }}>{progress.detail}</span>}
-            </p>
-            <button type="button" className="add-row" onClick={() => controllerRef.current?.abort()}>
-              Export abbrechen
-            </button>
-          </>
-        )}
-
-        {cancelled && <p role="status" style={{ fontSize: 12, marginTop: 14 }}>Export abgebrochen.</p>}
-
         {finished && (
           <p
             role="status"
@@ -187,7 +142,7 @@ export default function ExportSection({
               marginTop: 14,
             }}
           >
-            Video erstellt. Der Download wurde gestartet.
+            MOV-Datei erstellt.
           </p>
         )}
 

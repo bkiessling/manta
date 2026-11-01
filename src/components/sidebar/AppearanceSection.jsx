@@ -1,27 +1,268 @@
-export default function AppearanceSection({ chartType, appearance, updateSetting, minimumPeople = 1 }) {
-  const controls = [
-    ["size", "GRÖSSE", 20, 100, "%"],
-    ["positionX", "POSITION X", -50, 150, "%"],
-    ["positionY", "POSITION Y", -50, 150, "%"],
-    ...(chartType === "donut" ? [["thickness", "RINGSTÄRKE", 5, 80, "%"]] : []),
-    ["gap", "ABSTAND", 0, 12, ""],
-  ];
-  return <div className="sidebar-section">
-    <div className="sidebar-section-title">DARSTELLUNG</div>
-    <div className="section-content">
-      {chartType === "group" && <label className="control">
-        <span className="control-header"><span>ANZAHL PERSONEN</span><span>{appearance.peopleCount}</span></span>
-        <input type="number" aria-label="Anzahl Personen" min={minimumPeople} max="100" step="1"
-          value={appearance.peopleCount}
-          onChange={(event) => updateSetting("appearance", "peopleCount",
-            Math.max(minimumPeople, Math.min(100, Math.round(Number(event.target.value) || 1))))} />
-        <span className="panel-note">1–100 Personen. Für weniger Personen zuerst die zugeordneten Werte reduzieren.</span>
-      </label>}
-      {controls.map(([key, title, min, max, suffix]) => <label className="control" key={key}>
-        <span className="control-header"><span>{title}</span><span>{appearance[key]}{suffix}</span></span>
-        <input aria-label={title} type="range" min={min} max={max} step="1" value={appearance[key]}
-          onChange={(event) => updateSetting("appearance", key, Number(event.target.value))} />
-      </label>)}
+
+export default function AppearanceSection({
+  chartType,
+  appearance,
+  updateSetting,
+}) {
+  if (chartType === "explosion") {
+    return (
+      <div className="sidebar-section">
+        <div className="sidebar-section-title">
+          DARSTELLUNG
+        </div>
+
+        <div className="section-content">
+          <div className="control">
+            <div className="control-header">
+              <span>GRÖSSE</span>
+              <span>
+                {appearance.size ?? 80}
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="20"
+              max="180"
+              step="1"
+              value={appearance.size ?? 80}
+              onChange={(event) =>
+                updateSetting(
+                  "appearance",
+                  "size",
+                  Number(event.target.value)
+                )
+              }
+            />
+          </div>
+
+          <div className="control">
+            <div className="control-header">
+              <span>AUFBLÄHUNG</span>
+              <span>
+                {appearance.growth ?? 100}%
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="200"
+              step="1"
+              value={appearance.growth ?? 100}
+              onChange={(event) =>
+                updateSetting(
+                  "appearance",
+                  "growth",
+                  Number(event.target.value)
+                )
+              }
+            />
+          </div>
+
+          <div className="control">
+            <div className="control-header">
+              <span>PARTIKEL</span>
+              <span>
+                {appearance.particleCount ?? 24}
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="32"
+              step="1"
+              value={
+                appearance.particleCount ?? 24
+              }
+              onChange={(event) =>
+                updateSetting(
+                  "appearance",
+                  "particleCount",
+                  Number(event.target.value)
+                )
+              }
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (chartType === "welle") {
+    return (
+      <div className="sidebar-section">
+        <div className="sidebar-section-title">
+          DARSTELLUNG
+        </div>
+
+        <div className="section-content">
+          <div className="control">
+            <div className="control-header">
+              <span>WELLENHÖHE</span>
+              <span>
+                {appearance.waveHeight ?? 12}
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="30"
+              step="1"
+              value={
+                appearance.waveHeight ?? 12
+              }
+              onChange={(event) =>
+                updateSetting(
+                  "appearance",
+                  "waveHeight",
+                  Number(event.target.value)
+                )
+              }
+            />
+          </div>
+
+          <div className="control">
+            <div className="control-header">
+              <span>
+                WELLENGESCHWINDIGKEIT
+              </span>
+              <span>
+                {appearance.waveSpeed ?? 50}%
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={
+                appearance.waveSpeed ?? 50
+              }
+              onChange={(event) =>
+                updateSetting(
+                  "appearance",
+                  "waveSpeed",
+                  Number(event.target.value)
+                )
+              }
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sidebar-section">
+      <div className="sidebar-section-title">
+        DARSTELLUNG
+      </div>
+
+      <div className="section-content">
+        {chartType === "donut" && (
+          <>
+            <div className="control">
+              <div className="control-header">
+                <span>GRÖSSE</span>
+                <span>
+                  {appearance.size}%
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min="20"
+                max="100"
+                step="1"
+                value={appearance.size}
+                onChange={(event) =>
+                  updateSetting(
+                    "appearance",
+                    "size",
+                    Number(event.target.value)
+                  )
+                }
+              />
+            </div>
+
+            <div className="control">
+              <div className="control-header">
+                <span>ROTATION</span>
+                <span>
+                  {appearance.rotation ?? 0}°
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={
+                  appearance.rotation ?? 0
+                }
+                onChange={(event) =>
+                  updateSetting(
+                    "appearance",
+                    "rotation",
+                    Number(event.target.value)
+                  )
+                }
+              />
+            </div>
+
+            <div className="control">
+              <div className="control-header">
+                <span>RINGSTÄRKE</span>
+                <span>
+                  {appearance.thickness}%
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min="5"
+                max="80"
+                step="1"
+                value={appearance.thickness}
+                onChange={(event) =>
+                  updateSetting(
+                    "appearance",
+                    "thickness",
+                    Number(event.target.value)
+                  )
+                }
+              />
+            </div>
+          </>
+        )}
+
+        <div className="control">
+          <div className="control-header">
+            <span>ABSTAND</span>
+            <span>{appearance.gap}</span>
+          </div>
+
+          <input
+            type="range"
+            min="0"
+            max="12"
+            step="1"
+            value={appearance.gap}
+            onChange={(event) =>
+              updateSetting(
+                "appearance",
+                "gap",
+                Number(event.target.value)
+              )
+            }
+          />
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 }

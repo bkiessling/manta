@@ -1,14 +1,15 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { chartData } from "./data/chartData";
 import { chartPresets } from "./data/chartPresets";
 
-import ChartPreview from "./components/preview/ChartPreview";
+import Donut from "./charts/donut/Donut";
+import Welle from "./charts/welle/Welle";
+import Explosion from "./charts/explosion/Explosion";
 
 import DataSection from "./components/sidebar/DataSection";
 import ChartSection from "./components/sidebar/ChartSection";
-import DiagramOptionsSection from "./components/sidebar/DiagramOptionsSection";
 import LabelsSection from "./components/sidebar/LabelsSection";
 import AppearanceSection from "./components/sidebar/AppearanceSection";
 import AnimationSection from "./components/sidebar/AnimationSection";
@@ -22,15 +23,30 @@ import mantaRay from "./assets/manta_ray.svg";
 import "./App.css";
 
 const MODES = [
-  { id: "diagram", label: "Diagramm", number: "01" },
-  { id: "data", label: "Daten", number: "02" },
-  { id: "editor", label: "Editor", number: "03" },
-  { id: "export", label: "Export", number: "04" },
+  {
+    id: "diagram",
+    label: "Diagramm",
+    number: "01",
+  },
+  {
+    id: "data",
+    label: "Daten",
+    number: "02",
+  },
+  {
+    id: "editor",
+    label: "Editor",
+    number: "03",
+  },
+  {
+    id: "export",
+    label: "Export",
+    number: "04",
+  },
 ];
 
 export default function App() {
   const [mode, setMode] = useState("diagram");
-
   const [onboardingStep, setOnboardingStep] =
     useState("diagram");
 
@@ -38,22 +54,11 @@ export default function App() {
   const [playAnimation, setPlayAnimation] =
     useState(false);
 
-  const [chartType, setChartType] = useState("donut");
+  const [chartType, setChartType] =
+    useState("donut");
 
   const [chartDatasets, setChartDatasets] =
-    useState(() => Object.fromEntries(["donut", "bar", "group"].map((type) => [type,
-      (type === "group" ? chartData.slice(0, 2).map((item, index) => ({ ...item, value: index ? 25 : 50 })) : chartData)
-        .map((item, index) => ({ ...item, id: `${type}-${index}` })),
-    ])));
-
-  const [progressData, setProgressData] = useState([
-    {
-      id: "progress",
-      category: "Fortschritt",
-      value: 75,
-      color: "#a855f7",
-    },
-  ]);
+    useState(chartData);
 
   const [chartSettings, setChartSettings] =
     useState(() =>
@@ -69,29 +74,37 @@ export default function App() {
 
   const preset = chartPresets[chartType];
   const settings = chartSettings[chartType];
+  const data = chartDatasets[chartType] ?? [];
 
-  const diagramMode =
-    settings?.diagram?.mode ?? "distribution";
+  const visibleCategoryCount = data.filter(
+    (item) =>
+      item.visible !== false &&
+      Number(item.value) > 0
+  ).length;
 
-  const isProgress =
-    chartType === "donut" &&
-    diagramMode === "progress";
-
-  const data = isProgress
-    ? progressData
-    : chartDatasets[chartType] ?? [];
+  useEffect(() => {
+    if (
+      settings?.animation?.style === "spring" &&
+      visibleCategoryCount !== 1
+    ) {
+      setChartSettings((current) => ({
+        ...current,
+        [chartType]: {
+          ...current[chartType],
+          animation: {
+            ...current[chartType].animation,
+            style: "easeOut",
+          },
+        },
+      }));
+    }
+  }, [
+    chartType,
+    settings?.animation?.style,
+    visibleCategoryCount,
+  ]);
 
   const setData = (value) => {
-    if (isProgress) {
-      setProgressData((current) =>
-        typeof value === "function"
-          ? value(current)
-          : value
-      );
-
-      return;
-    }
-
     setChartDatasets((current) => ({
       ...current,
       [chartType]:
@@ -102,22 +115,31 @@ export default function App() {
   };
 
   const addRow = () => {
-    if (isProgress) return;
+    if (
+      preset?.data?.maxRows != null &&
+      data.length >= preset.data.maxRows
+    ) {
+      return;
+    }
 
     setData((current) => [
       ...current,
       {
-        id: crypto.randomUUID(),
         category: "Neue Kategorie",
-        value: chartType === "group" ? Math.min(10, Math.max(0,
-          settings.appearance.peopleCount - current.reduce((sum, row) => sum + Number(row.value || 0), 0))) : 10,
+        value: 10,
         color: "#a855f7",
+        visible: true,
       },
     ]);
   };
 
   const deleteRow = (indexToDelete) => {
-    if (isProgress) return;
+    if (
+      data.length <=
+      (preset?.data?.minRows ?? 1)
+    ) {
+      return;
+    }
 
     setData((current) =>
       current.filter(
@@ -145,6 +167,18 @@ export default function App() {
     }));
   };
 
+  const updateFormat = (value) => {
+    if (!settings) return;
+
+    setChartSettings((current) => ({
+      ...current,
+      [chartType]: {
+        ...current[chartType],
+        format: value,
+      },
+    }));
+  };
+
   const updateChartPosition = (x, y) => {
     setChartSettings((current) => ({
       ...current,
@@ -159,24 +193,6 @@ export default function App() {
     }));
   };
 
-  const moveLabel = (id, position) => {
-    setChartSettings((current) => ({
-      ...current,
-      [chartType]: {
-        ...current[chartType],
-        labels: {
-          ...current[chartType].labels,
-          positions: { ...current[chartType].labels.positions, [id]: position },
-        },
-      },
-    }));
-  };
-
-  const setDiagramMode = (value) => {
-    setPlayAnimation(false);
-    updateSetting("diagram", "mode", value);
-  };
-
   const changeChartType = (value) => {
     setPlayAnimation(false);
     setChartType(value);
@@ -189,7 +205,10 @@ export default function App() {
       return;
     }
 
-    if (value === "editor" || value === "export") {
+    if (
+      value === "editor" ||
+      value === "export"
+    ) {
       setOnboardingStep("complete");
       setPlayAnimation(true);
       setReplay((current) => current + 1);
@@ -214,34 +233,6 @@ export default function App() {
     setPlayAnimation(true);
     setReplay((current) => current + 1);
   };
-
-  const dataEditor = preset ? (
-    <DataSection
-      data={data}
-      setData={setData}
-      addRow={addRow}
-      deleteRow={deleteRow}
-      mode={
-        isProgress
-          ? "progress"
-          : "distribution"
-      }
-      minRows={1}
-      maxTotal={chartType === "group" ? settings.appearance.peopleCount : null}
-      integer={chartType === "group"}
-      maxRows={
-        isProgress
-          ? 1
-          : preset.data?.maxRows ?? null
-      }
-      minValue={0}
-      maxValue={
-        isProgress
-          ? 100
-          : preset.data?.maxValue ?? null
-      }
-    />
-  ) : null;
 
   const showOnboarding =
     onboardingStep !== "complete";
@@ -271,7 +262,9 @@ export default function App() {
               key={item.id}
               type="button"
               className={`nav-button ${
-                mode === item.id ? "active" : ""
+                mode === item.id
+                  ? "active"
+                  : ""
               }`}
               onClick={() => changeMode(item.id)}
               aria-current={
@@ -283,6 +276,7 @@ export default function App() {
               <span className="nav-number">
                 {item.number}
               </span>
+
               <span>{item.label}</span>
             </button>
           ))}
@@ -297,7 +291,9 @@ export default function App() {
         <aside className="sidebar sidebar-left">
           <div className="panel-heading">
             <span className="eyebrow">
-              {activeMode?.label.toUpperCase()}
+              {MODES.find(
+                (item) => item.id === mode
+              )?.label.toUpperCase()}
             </span>
 
             <h2>
@@ -319,35 +315,49 @@ export default function App() {
             />
           )}
 
-          {mode === "data" && dataEditor}
+          {mode === "data" && preset && (
+            <DataSection
+              data={data}
+              setData={setData}
+              addRow={addRow}
+              deleteRow={deleteRow}
+              mode="distribution"
+              minRows={preset.data?.minRows ?? 1}
+              maxRows={preset.data?.maxRows ?? null}
+              minValue={preset.data?.minValue ?? 0}
+              maxValue={preset.data?.maxValue ?? null}
+            />
+          )}
 
           {mode === "editor" &&
             settings &&
             preset && (
               <AnimationSection
+                chartType={chartType}
                 animation={settings.animation}
-                animationOptions={
-                  preset.options.animation
-                }
+                animationOptions={preset.options.animation}
                 updateSetting={updateSetting}
+                visibleCategoryCount={
+                  chartType === "donut"
+                    ? visibleCategoryCount
+                    : 0
+                }
               />
             )}
 
-          {mode === "export" && settings && (
-            <ExportSection
-              data={data}
-              settings={settings}
-              chartType={chartType}
-              updateSetting={updateSetting}
-            />
-          )}
+          {mode === "export" &&
+            settings && (
+              <ExportSection
+                data={data}
+                settings={settings}
+                chartType={chartType}
+              />
+            )}
         </aside>
 
         <section className="workspace">
           <div className="workspace-topline">
-            <span>
-              Live Preview · 9:16
-            </span>
+            <span>Live Preview · 9:16</span>
           </div>
 
           <div className="preview-stage">
@@ -369,7 +379,13 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="phone-preview">
+              <div
+                className="phone-preview"
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
                 {showOnboarding ? (
                   <OnboardingPreview
                     step={onboardingStep}
@@ -377,21 +393,165 @@ export default function App() {
                   />
                 ) : (
                   <>
-                    {settings && (
-                      <DraggableChart
-                        chartType={chartType}
-                        positionX={settings.appearance.positionX}
-                        positionY={settings.appearance.positionY}
-                        size={settings.appearance.size}
-                        thickness={settings.appearance.thickness ?? 30}
-                        onPositionChange={updateChartPosition}
-                      >
-                        <ChartPreview
-                          key={`${chartType}-${diagramMode}-${replay}`}
-                          data={data} settings={settings} chartType={chartType}
-                          playAnimation={playAnimation} onLabelMove={moveLabel}
+                    {settings &&
+                      chartType === "donut" && (
+                        <DraggableChart
+                          positionX={
+                            settings.appearance
+                              .positionX
+                          }
+                          positionY={
+                            settings.appearance
+                              .positionY
+                          }
+                          size={
+                            settings.appearance.size
+                          }
+                          thickness={
+                            settings.appearance
+                              .thickness
+                          }
+                          onPositionChange={
+                            updateChartPosition
+                          }
+                        >
+                          <Donut
+                            key={`${chartType}-${replay}`}
+                            data={data}
+                            playAnimation={playAnimation}
+                            size={
+                              settings.appearance.size
+                            }
+                            positionX={
+                              settings.appearance
+                                .positionX
+                            }
+                            positionY={
+                              settings.appearance
+                                .positionY
+                            }
+                            thickness={
+                              settings.appearance
+                                .thickness
+                            }
+                            gap={
+                              settings.appearance.gap
+                            }
+                            rotation={
+                              settings.appearance
+                                .rotation
+                            }
+                            showCategory={
+                              settings.labels
+                                .showCategory
+                            }
+                            showValue={
+                              settings.labels
+                                .showValue
+                            }
+                            labelFontSize={
+                              settings.labels.fontSize
+                            }
+                            labelDistance={
+                              settings.labels.distance
+                            }
+                            valueFormat={
+                              settings.format
+                            }
+                            duration={
+                              settings.animation
+                                .duration
+                            }
+                            animationStyle={
+                              settings.animation.style
+                            }
+                            speed={
+                              settings.animation
+                                .speed ?? 50
+                            }
+                            bounce={
+                              settings.animation
+                                .bounce ?? 35
+                            }
+                          />
+                        </DraggableChart>
+                      )}
+
+                    {settings &&
+                      chartType === "welle" && (
+                        <Welle
+                          key={`${chartType}-${replay}`}
+                          data={data}
+                          playAnimation={playAnimation}
+                          duration={
+                            settings.animation
+                              .duration
+                          }
+                          animationStyle={
+                            settings.animation.style
+                          }
+                          waveHeight={
+                            settings.appearance
+                              .waveHeight
+                          }
+                          waveSpeed={
+                            settings.appearance
+                              .waveSpeed
+                          }
+                          showCategory={
+                            settings.labels
+                              .showCategory
+                          }
+                          showValue={
+                            settings.labels.showValue
+                          }
+                          labelFontSize={
+                            settings.labels.fontSize
+                          }
+                          valueFormat={
+                            settings.format
+                          }
                         />
-                      </DraggableChart>
+                      )}
+
+                    {settings &&
+                      chartType === "explosion" && (
+                        <Explosion
+                          key={`${chartType}-${replay}`}
+                          data={data}
+                          playAnimation={playAnimation}
+                          duration={
+                            settings.animation
+                              .duration
+                          }
+                          animationStyle={
+                            settings.animation.style
+                          }
+                          size={
+                            settings.appearance.size
+                          }
+                          growth={
+                            settings.appearance.growth
+                          }
+                          particleCount={
+                            settings.appearance
+                              .particleCount
+                          }
+                          valueFormat={
+                            settings.format
+                          }
+                        />
+                      )}
+
+                    {![
+                      "donut",
+                      "welle",
+                      "explosion",
+                    ].includes(chartType) && (
+                      <div className="preview-empty">
+                        Für diesen Diagrammtyp
+                        gibt es noch keine Vorschau.
+                      </div>
                     )}
                   </>
                 )}
@@ -419,30 +579,87 @@ export default function App() {
           </div>
 
           {mode === "diagram" &&
-            chartType === "donut" &&
-            settings && (
-              <DiagramOptionsSection
-                diagramMode={diagramMode}
-                setDiagramMode={setDiagramMode}
-              />
-            )}
-
-          {mode === "diagram" &&
-            chartType !== "donut" && (
+            ![
+              "donut",
+              "welle",
+              "explosion",
+            ].includes(chartType) && (
               <div className="panel-note">
-                {chartType === "group"
-                  ? "Jede Person steht für einen Wert. Unter Daten kannst du bis zu 100 Personen farblich zuordnen."
-                  : "Balken wachsen entsprechend den eingegebenen Werten. Animation und Gestaltung findest du im Editor."}
+                Für diesen Diagrammtyp
+                gibt es noch keine Optionen.
               </div>
             )}
 
-          {mode === "data" && (
-            <div className="panel-note">
-              {isProgress
-                ? "Lege den Fortschrittswert zwischen 0 und 100 % fest."
-                : chartType === "group"
-                  ? `Eine Person pro Wert, insgesamt höchstens ${settings.appearance.peopleCount}. Nicht zugeordnete Personen bleiben grau.`
-                  : "Bearbeite links Kategorien, Werte und Farben."}
+          {mode === "data" && settings && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-title">
+                FORMAT
+              </div>
+
+              <div className="section-content">
+                <div
+                  role="radiogroup"
+                  aria-label="Format"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="value-format"
+                      value="number"
+                      checked={
+                        settings.format === "number"
+                      }
+                      onChange={() =>
+                        updateFormat("number")
+                      }
+                    />
+                    Zahl
+                  </label>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="value-format"
+                      value="percent"
+                      checked={
+                        settings.format === "percent"
+                      }
+                      onChange={() =>
+                        updateFormat("percent")
+                      }
+                    />
+                    Prozent
+                  </label>
+                </div>
+
+                <p
+                  className="panel-note"
+                  style={{ marginTop: "16px" }}
+                >
+                  {chartType === "donut"
+                    ? "Bei Prozent wird der Anteil an der Gesamtsumme angezeigt."
+                    : "Das Format verändert nur die Anzeige, nicht den eingegebenen Wert."}
+                </p>
+              </div>
             </div>
           )}
 
@@ -450,29 +667,25 @@ export default function App() {
             <>
               <AppearanceSection
                 chartType={chartType}
-                appearance={
-                  settings.appearance
-                }
-                minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
-                updateSetting={
-                  updateSetting
-                }
+                appearance={settings.appearance}
+                updateSetting={updateSetting}
               />
 
-              <LabelsSection
-                labels={settings.labels}
-                updateSetting={
-                  updateSetting
-                }
-              />
+              {chartType !== "explosion" && (
+                <LabelsSection
+                  labels={settings.labels}
+                  updateSetting={updateSetting}
+                />
+              )}
             </>
           )}
 
           {mode === "export" && (
             <div className="panel-note">
-              MOV mit ProRes 4444 für Premiere Pro.
-              Wähle links Transparenz oder eine feste Hintergrundfarbe.
-              Verschobene Beschriftungen werden mit exportiert.
+              MOV mit ProRes 4444 und
+              Alphakanal für Premiere Pro.
+              Der Export wird lokal mit
+              FFmpeg erstellt.
             </div>
           )}
         </aside>

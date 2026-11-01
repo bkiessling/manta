@@ -1,72 +1,233 @@
 import express from "express";
-import { pathToFileURL } from "node:url";
-import { ExportManager, httpError } from "./exports.js";
+import multer from "multer";
+import JSZip from "jszip";
+import { spawn } from "node:child_process";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
-export function createExportApp(options = {}) {
-  const app = express();
-  const exports = new ExportManager(options);
-  app.disable("x-powered-by");
-  app.set("trust proxy", "loopback");
-  app.use("/api", (req, res, next) => {
-    res.setHeader("Cache-Control", "no-store");
-    // Use a same-origin Vite/reverse proxy; reject cross-site browser writes.
-    if (req.headers.origin && req.headers.origin !== `${req.protocol}://${req.get("host")}`) {
-      return res.status(403).json({ error: "Der Export muss über dieselbe Website aufgerufen werden." });
+const app = express();
+const PORT = 4318;
+
+// Lokale Vite-Entwicklungsserver erlauben.
+// Funktioniert mit 5173, 5174, 5175 usw.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin) {
+    let isAllowed = false;
+
+    try {
+      const url = new URL(origin);
+
+      isAllowed =
+        url.protocol === "http:" &&
+        ["localhost", "127.0.0.1"].includes(
+          url.hostname
+        );
+    } catch {
+      isAllowed = false;
     }
-    next();
-  });
-  app.use(express.json({ limit: "2kb" }));
-  app.post("/api/exports", async (req, res) => {
-    const job = await exports.create(req.body);
-    res.status(201).json(exports.status(job));
-  });
-  app.get("/api/exports/:id", (req, res) => res.json(exports.status(exports.get(req.params.id))));
-  app.put("/api/exports/:id/frames/:index", async (req, res) => {
-    const job = exports.get(req.params.id);
-    if (!/^\d+$/.test(req.params.index)) throw httpError(400, "Ungültige Bildnummer.");
-    await exports.upload(job, Number(req.params.index), req);
-    res.json(exports.status(job));
-  });
-  app.post("/api/exports/:id/encode", (req, res) => {
-    const job = exports.get(req.params.id);
-    exports.start(job);
-    res.status(202).json(exports.status(job));
-  });
-  app.delete("/api/exports/:id", async (req, res) => {
-    const job = exports.get(req.params.id);
-    await exports.cancel(job);
-    res.sendStatus(204);
-  });
-  app.get("/api/exports/:id/file", (req, res) => {
-    const job = exports.get(req.params.id);
-    if (job.state !== "ready" || job.downloading) throw httpError(409, "Das Video ist noch nicht verfügbar.");
-    job.downloading = true;
-    job.downloadResponse = res;
-    res.download(job.output, "manta-animation.mov", (error) => {
-      exports.cancel(job).catch(console.error);
-      if (error && !res.headersSent && !res.destroyed) res.status(500).end();
+
+    if (isAllowed) {
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        origin
+      );
+
+      res.setHeader("Vary", "Origin");
+
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "POST, OPTIONS"
+      );
+
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type"
+      );
+    }
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 250 * 1024 * 1024,
+  },
+});
+
+function encodeMov(directory) {
+  return new Promise((resolve, reject) => {
+    const output = path.join(
+      directory,
+      "manta-animation.mov"
+    );
+
+    const ffmpeg = spawn("ffmpeg", [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-y",
+      "-framerate",
+      "30",
+      "-i",
+      path.join(directory, "frame_%05d.png"),
+      "-c:v",
+      "prores_ks",
+      "-profile:v",
+      "4",
+      "-pix_fmt",
+      "yuva444p10le",
+      "-alpha_bits",
+      "16",
+      output,
+    ]);
+
+    let errors = "";
+    let settled = false;
+
+    ffmpeg.stderr.on("data", (data) => {
+      errors += data.toString();
+    });
+
+    ffmpeg.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      reject(
+        new Error(
+          `FFmpeg konnte nicht gestartet werden: ${error.message}`
+        )
+      );
+    });
+
+    ffmpeg.on("close", (code) => {
+      if (settled) return;
+      settled = true;
+
+      if (code === 0) {
+        resolve(output);
+      } else {
+        reject(
+          new Error(
+            errors || `FFmpeg-Fehler: ${code}`
+          )
+        );
+      }
     });
   });
-  app.use((error, req, res, next) => {
-    if (res.destroyed) return;
-    if (res.headersSent) return next(error);
-    const status = error.status || 500;
-    if (status >= 500) console.error(error);
-    res.status(status).json({ error: status >= 500 ? "Der Export-Server konnte die Anfrage nicht verarbeiten." : error.message });
-  });
-  return { app, exports };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { app, exports } = createExportApp();
-  const port = Number(process.env.PORT || 4318);
-  const host = process.env.HOST || "127.0.0.1";
-  const server = app.listen(port, host, () => console.log(`MANTA Export-Server: ${host}:${port}`));
-  server.requestTimeout = 30_000;
-  for (const signal of ["SIGTERM", "SIGINT"]) {
-    process.once(signal, () => {
-      server.close();
-      exports.close().finally(() => process.exit(0));
-    });
+app.post(
+  "/api/export/mov",
+  upload.single("frames"),
+  async (req, res) => {
+    let directory;
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Keine Frames empfangen.",
+        });
+      }
+
+      if (Number(req.body.fps) !== 30) {
+        return res.status(400).json({
+          error: "Nur 30 FPS werden unterstützt.",
+        });
+      }
+
+      directory = await mkdtemp(
+        path.join(tmpdir(), "manta-")
+      );
+
+      const zip = await JSZip.loadAsync(
+        req.file.buffer
+      );
+
+      const names = Object.keys(zip.files)
+        .filter((name) =>
+          /^frame_\d{5}\.png$/.test(name)
+        )
+        .sort();
+
+      if (
+        names.length < 2 ||
+        names.length > 1800
+      ) {
+        throw new Error(
+          "Ungültige Frame-Anzahl."
+        );
+      }
+
+      for (let i = 0; i < names.length; i++) {
+        const expected = `frame_${String(
+          i + 1
+        ).padStart(5, "0")}.png`;
+
+        if (names[i] !== expected) {
+          throw new Error(
+            "Fehlerhafte Frame-Reihenfolge."
+          );
+        }
+
+        const buffer =
+          await zip.files[names[i]].async(
+            "nodebuffer"
+          );
+
+        await writeFile(
+          path.join(directory, expected),
+          buffer
+        );
+      }
+
+      const output = await encodeMov(directory);
+
+      const cleanupDirectory = directory;
+      directory = null;
+
+      res.download(
+        output,
+        "manta-animation.mov",
+        async (error) => {
+          if (error) {
+            console.error(error);
+          }
+
+          await rm(cleanupDirectory, {
+            recursive: true,
+            force: true,
+          }).catch(console.error);
+        }
+      );
+    } catch (error) {
+      console.error(error);
+
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: error.message,
+        });
+      }
+    } finally {
+      if (directory) {
+        await rm(directory, {
+          recursive: true,
+          force: true,
+        }).catch(console.error);
+      }
+    }
   }
-}
+);
+
+app.listen(PORT, "127.0.0.1", () => {
+  console.log(
+    `MANTA Export-Server läuft auf http://127.0.0.1:${PORT}`
+  );
+});

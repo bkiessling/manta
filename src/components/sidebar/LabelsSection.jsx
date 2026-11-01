@@ -13,15 +13,6 @@ export default function LabelsSection({
         {/* Label controls */}
         <div className="section-content">
   
-          <p className="panel-note">Beschriftungen direkt in der Vorschau ziehen oder per Pfeiltasten verschieben. Positionen gelten auch für den Export.</p>
-          <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
-            Beschriftungen zurücksetzen
-          </button>
-          <label className="control">
-            <span className="control-header">TEXTFARBE</span>
-            <input type="color" aria-label="Beschriftungsfarbe" value={labels.color || "#111111"}
-              onChange={(event) => updateSetting("labels", "color", event.target.value)} />
-          </label>
           {/* Category visibility */}
           <label className="checkbox-control">
             <span>KATEGORIE ANZEIGEN</span>

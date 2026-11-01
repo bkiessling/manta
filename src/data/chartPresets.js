@@ -1,31 +1,196 @@
-const animation = { style: "linear", duration: 2, stiffness: 90, damping: 15 };
-const labels = { showCategory: true, showValue: true, fontSize: 12, distance: 24, positions: {}, color: "#111111" };
-const output = { transparent: true, backgroundColor: "#f5f5f3" };
-const options = { animation: { styles: ["linear", "easeOut", "easeInOut", "spring", "bounce"] } };
 
 export const chartPresets = {
   donut: {
-    data: { maxRows: null, maxValue: null },
-    defaults: {
-      diagram: { mode: "distribution" }, animation, labels, output,
-      appearance: { size: 70, positionX: 50, positionY: 28, thickness: 30, gap: 3, rotation: 0 },
+    data: {
+      minRows: 1,
+      maxRows: null,
+      minValue: 0,
+      maxValue: null,
     },
-    options,
+
+    defaults: {
+      format: "percent",
+
+      animation: {
+        style: "linear",
+        duration: 2,
+        speed: 50,
+        bounce: 35,
+      },
+
+      appearance: {
+        size: 70,
+        positionX: 50,
+        positionY: 28,
+        thickness: 30,
+        gap: 3,
+        rotation: 0,
+      },
+
+      labels: {
+        showCategory: false,
+        showValue: false,
+        fontSize: 12,
+        distance: 24,
+      },
+    },
+
+    options: {
+      animation: {
+        styles: [
+          "linear",
+          "easeOut",
+          "easeInOut",
+          "spring",
+        ],
+        controls: [
+          "style",
+          "duration",
+          "speed",
+          "bounce",
+        ],
+      },
+
+      appearance: {
+        controls: [
+          "size",
+          "positionX",
+          "positionY",
+          "thickness",
+          "gap",
+          "rotation",
+        ],
+      },
+
+      labels: {
+        controls: [
+          "showCategory",
+          "showValue",
+          "fontSize",
+          "distance",
+        ],
+      },
+    },
   },
-  bar: {
-    data: { maxRows: 12, maxValue: null },
-    defaults: {
-      animation, labels, output,
-      appearance: { size: 85, positionX: 50, positionY: 40, gap: 8 },
+
+  welle: {
+    data: {
+      minRows: 1,
+      maxRows: 1,
+      minValue: 0,
+      maxValue: 100,
     },
-    options,
+
+    defaults: {
+      format: "percent",
+
+      animation: {
+        style: "easeInOut",
+        duration: 3,
+        speed: 50,
+        bounce: 35,
+      },
+
+      appearance: {
+        waveHeight: 12,
+        waveSpeed: 50,
+      },
+
+      labels: {
+        showCategory: false,
+        showValue: false,
+        fontSize: 12,
+        distance: 24,
+      },
+    },
+
+    options: {
+      animation: {
+        styles: [
+          "linear",
+          "easeOut",
+          "easeInOut",
+        ],
+        controls: [
+          "style",
+          "duration",
+        ],
+      },
+
+      appearance: {
+        controls: [
+          "waveHeight",
+          "waveSpeed",
+        ],
+      },
+
+      labels: {
+        controls: [
+          "showCategory",
+          "showValue",
+          "fontSize",
+          "distance",
+        ],
+      },
+    },
   },
-  group: {
-    data: { maxRows: 8, maxValue: 100 },
-    defaults: {
-      animation, labels, output,
-      appearance: { size: 85, positionX: 50, positionY: 35, gap: 3, peopleCount: 100 },
+
+  explosion: {
+    data: {
+      minRows: 1,
+      maxRows: 1,
+      minValue: 0,
+      maxValue: null,
     },
-    options,
+
+    defaults: {
+      format: "number",
+
+      animation: {
+        style: "easeInOut",
+        duration: 3,
+        speed: 50,
+        bounce: 35,
+      },
+
+      appearance: {
+        size: 80,
+        growth: 100,
+        particleCount: 24,
+      },
+
+      labels: {
+        showCategory: false,
+        showValue: false,
+        fontSize: 12,
+        distance: 24,
+      },
+    },
+
+    options: {
+      animation: {
+        styles: [
+          "linear",
+          "easeOut",
+          "easeInOut",
+        ],
+        controls: [
+          "style",
+          "duration",
+        ],
+      },
+
+      appearance: {
+        controls: [
+          "size",
+          "growth",
+          "particleCount",
+        ],
+      },
+
+      labels: {
+        controls: [],
+      },
+    },
   },
 };
