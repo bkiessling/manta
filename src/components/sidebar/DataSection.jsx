@@ -9,6 +9,8 @@ export default function DataSection({
   minValue = 0,
   maxValue = null,
   mode = "distribution",
+  maxTotal = null,
+  integer = false,
 }) {
   const isProgress = mode === "progress";
 
@@ -67,14 +69,22 @@ export default function DataSection({
         </div>
 
         <div className="data-table">
-          {visibleData.map((item, index) => (
+          {visibleData.map((item, index) => {
+            const rowMax = maxTotal === null ? effectiveMaxValue : Math.max(0,
+              maxTotal - data.reduce((sum, row, i) => sum + (i === index ? 0 : Number(row.value) || 0), 0));
+            const normalize = (raw) => {
+              const n = integer ? Math.round(clampValue(raw)) : clampValue(raw);
+              return rowMax === null ? n : Math.min(n, rowMax);
+            };
+            return (
             <div
               className="data-row"
-              key={index}
+              key={item.id ?? index}
             >
               {/* Kategorie */}
               <input
                 type="text"
+                aria-label={`Kategorie ${index + 1}`}
                 value={item.category}
                 onChange={(event) =>
                   updateRow(
@@ -88,8 +98,10 @@ export default function DataSection({
               {/* Wert */}
               <input
                 type="number"
+                aria-label={`Wert ${index + 1}`}
                 min={effectiveMinValue}
-                max={effectiveMaxValue ?? undefined}
+                max={rowMax ?? undefined}
+                step={integer ? 1 : "any"}
                 value={item.value}
                 onChange={(event) =>
                   updateRow(
@@ -97,14 +109,14 @@ export default function DataSection({
                     "value",
                     event.target.value === ""
                       ? ""
-                      : Number(event.target.value)
+                      : maxTotal === null ? Number(event.target.value) : normalize(event.target.value)
                   )
                 }
                 onBlur={(event) =>
                   updateRow(
                     index,
                     "value",
-                    clampValue(event.target.value)
+                    normalize(event.target.value)
                   )
                 }
               />
@@ -113,6 +125,7 @@ export default function DataSection({
               <input
                 className="data-color"
                 type="color"
+                aria-label={`Farbe ${index + 1}`}
                 value={item.color}
                 onChange={(event) =>
                   updateRow(
@@ -138,7 +151,7 @@ export default function DataSection({
                 <span />
               )}
             </div>
-          ))}
+          );})}
         </div>
 
         {/* Weitere Zeilen nur bei Verteilung */}

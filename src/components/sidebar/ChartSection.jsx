@@ -10,9 +10,19 @@ const chartTypes = [
     label: "Balken",
     icon: "bar",
   },
+  { value: "group", label: "Gruppe", icon: "group" },
 ];
 
 function ChartIcon({ type }) {
+  if (type === "group") {
+    return <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      {[7, 16, 25].map((x) => <g key={x}>
+        <circle cx={x} cy="8" r="3" />
+        <rect x={x - 3} y="13" width="6" height="9" rx="2" />
+        <path d={`M${x - 3} 20h2v9h-2zM${x + 1} 20h2v9h-2z`} />
+      </g>)}
+    </svg>;
+  }
   if (type === "donut") {
     return (
       <svg

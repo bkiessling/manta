@@ -17,6 +17,7 @@ const clamp = (value, min, max) =>
 
 export default function DraggableChart({
   children,
+  chartType = "donut",
   positionX,
   positionY,
   size,
@@ -66,6 +67,9 @@ export default function DraggableChart({
     const centerY =
       CANVAS_HEIGHT * (positionY / 100);
 
+    if (chartType !== "donut") {
+      return Math.abs(point.x - centerX) <= outerRadius && Math.abs(point.y - centerY) <= outerRadius;
+    }
     const distance = Math.hypot(
       point.x - centerX,
       point.y - centerY

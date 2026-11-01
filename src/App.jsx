@@ -4,7 +4,7 @@ import { useState } from "react";
 import { chartData } from "./data/chartData";
 import { chartPresets } from "./data/chartPresets";
 
-import Donut from "./charts/donut/Donut";
+import ChartPreview from "./components/preview/ChartPreview";
 
 import DataSection from "./components/sidebar/DataSection";
 import ChartSection from "./components/sidebar/ChartSection";
@@ -41,10 +41,14 @@ export default function App() {
   const [chartType, setChartType] = useState("donut");
 
   const [chartDatasets, setChartDatasets] =
-    useState(chartData);
+    useState(() => Object.fromEntries(["donut", "bar", "group"].map((type) => [type,
+      (type === "group" ? chartData.slice(0, 2).map((item, index) => ({ ...item, value: index ? 25 : 50 })) : chartData)
+        .map((item, index) => ({ ...item, id: `${type}-${index}` })),
+    ])));
 
   const [progressData, setProgressData] = useState([
     {
+      id: "progress",
       category: "Fortschritt",
       value: 75,
       color: "#a855f7",
@@ -103,8 +107,10 @@ export default function App() {
     setData((current) => [
       ...current,
       {
+        id: crypto.randomUUID(),
         category: "Neue Kategorie",
-        value: 10,
+        value: chartType === "group" ? Math.min(10, Math.max(0,
+          settings.appearance.peopleCount - current.reduce((sum, row) => sum + Number(row.value || 0), 0))) : 10,
         color: "#a855f7",
       },
     ]);
@@ -148,6 +154,19 @@ export default function App() {
           ...current[chartType].appearance,
           positionX: x,
           positionY: y,
+        },
+      },
+    }));
+  };
+
+  const moveLabel = (id, position) => {
+    setChartSettings((current) => ({
+      ...current,
+      [chartType]: {
+        ...current[chartType],
+        labels: {
+          ...current[chartType].labels,
+          positions: { ...current[chartType].labels.positions, [id]: position },
         },
       },
     }));
@@ -208,6 +227,8 @@ export default function App() {
           : "distribution"
       }
       minRows={1}
+      maxTotal={chartType === "group" ? settings.appearance.peopleCount : null}
+      integer={chartType === "group"}
       maxRows={
         isProgress
           ? 1
@@ -317,6 +338,7 @@ export default function App() {
               data={data}
               settings={settings}
               chartType={chartType}
+              updateSetting={updateSetting}
             />
           )}
         </aside>
@@ -355,83 +377,21 @@ export default function App() {
                   />
                 ) : (
                   <>
-                    {settings &&
-                      chartType === "donut" && (
-                        <DraggableChart
-                          positionX={
-                            settings.appearance.positionX
-                          }
-                          positionY={
-                            settings.appearance.positionY
-                          }
-                          size={
-                            settings.appearance.size
-                          }
-                          thickness={
-                            settings.appearance.thickness
-                          }
-                          onPositionChange={
-                            updateChartPosition
-                          }
-                        >
-                          <Donut
-                            key={`${chartType}-${diagramMode}-${replay}`}
-                            data={data}
-                            mode={diagramMode}
-                            playAnimation={
-                              playAnimation
-                            }
-                            size={
-                              settings.appearance.size
-                            }
-                            positionX={
-                              settings.appearance.positionX
-                            }
-                            positionY={
-                              settings.appearance.positionY
-                            }
-                            thickness={
-                              settings.appearance.thickness
-                            }
-                            gap={
-                              settings.appearance.gap
-                            }
-                            rotation={
-                              settings.appearance.rotation
-                            }
-                            showCategory={
-                              settings.labels.showCategory
-                            }
-                            showValue={
-                              settings.labels.showValue
-                            }
-                            labelFontSize={
-                              settings.labels.fontSize
-                            }
-                            labelDistance={
-                              settings.labels.distance
-                            }
-                            duration={
-                              settings.animation.duration
-                            }
-                            animationStyle={
-                              settings.animation.style
-                            }
-                            stiffness={
-                              settings.animation.stiffness ?? 90
-                            }
-                            damping={
-                              settings.animation.damping ?? 15
-                            }
-                          />
-                        </DraggableChart>
-                      )}
-
-                    {chartType !== "donut" && (
-                      <div className="preview-empty">
-                        Für diesen Diagrammtyp gibt
-                        es noch keine Vorschau.
-                      </div>
+                    {settings && (
+                      <DraggableChart
+                        chartType={chartType}
+                        positionX={settings.appearance.positionX}
+                        positionY={settings.appearance.positionY}
+                        size={settings.appearance.size}
+                        thickness={settings.appearance.thickness ?? 30}
+                        onPositionChange={updateChartPosition}
+                      >
+                        <ChartPreview
+                          key={`${chartType}-${diagramMode}-${replay}`}
+                          data={data} settings={settings} chartType={chartType}
+                          playAnimation={playAnimation} onLabelMove={moveLabel}
+                        />
+                      </DraggableChart>
                     )}
                   </>
                 )}
@@ -470,8 +430,9 @@ export default function App() {
           {mode === "diagram" &&
             chartType !== "donut" && (
               <div className="panel-note">
-                Für diesen Diagrammtyp gibt
-                es noch keine Optionen.
+                {chartType === "group"
+                  ? "Jede Person steht für einen Wert. Unter Daten kannst du bis zu 100 Personen farblich zuordnen."
+                  : "Balken wachsen entsprechend den eingegebenen Werten. Animation und Gestaltung findest du im Editor."}
               </div>
             )}
 
@@ -479,7 +440,9 @@ export default function App() {
             <div className="panel-note">
               {isProgress
                 ? "Lege den Fortschrittswert zwischen 0 und 100 % fest."
-                : "Bearbeite links Kategorien, Werte und Farben."}
+                : chartType === "group"
+                  ? `Eine Person pro Wert, insgesamt höchstens ${settings.appearance.peopleCount}. Nicht zugeordnete Personen bleiben grau.`
+                  : "Bearbeite links Kategorien, Werte und Farben."}
             </div>
           )}
 
@@ -490,6 +453,7 @@ export default function App() {
                 appearance={
                   settings.appearance
                 }
+                minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
                 updateSetting={
                   updateSetting
                 }
@@ -506,10 +470,9 @@ export default function App() {
 
           {mode === "export" && (
             <div className="panel-note">
-              MOV mit ProRes 4444 und
-              Alphakanal für Premiere Pro.
-              Der Export wird lokal mit
-              FFmpeg erstellt.
+              MOV mit ProRes 4444 für Premiere Pro.
+              Wähle links Transparenz oder eine feste Hintergrundfarbe.
+              Verschobene Beschriftungen werden mit exportiert.
             </div>
           )}
         </aside>
