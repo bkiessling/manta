@@ -1,0 +1,340 @@
+
+/* =========================================
+   ONBOARDING PREVIEW
+   ========================================= */
+
+   .onboarding-preview {
+    position: absolute;
+    inset: 0;
+  
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  
+    padding: 24px;
+    background: #f5f5f3;
+    color: #242424;
+  
+    text-align: center;
+  }
+  
+  .onboarding-illustration {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    width: 100%;
+    height: 225px;
+  
+    margin-bottom: 18px;
+  }
+  
+  .onboarding-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  
+    width: 100%;
+    max-width: 260px;
+  }
+  
+  .onboarding-content h2 {
+    margin: 0 0 12px;
+  
+    color: #242424;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.25;
+  }
+  
+  .onboarding-content p {
+    margin: 0;
+  
+    color: #777;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  
+  .onboarding-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  
+    margin-top: 24px;
+    padding: 10px 4px;
+  
+    background: transparent;
+    border: 0;
+  
+    color: #8b3fd1;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+  
+    cursor: pointer;
+  
+    transition:
+      color 160ms ease,
+      gap 160ms ease;
+  }
+  
+  .onboarding-next:hover {
+    color: #a855f7;
+    gap: 15px;
+  }
+  
+  .onboarding-next:focus-visible {
+    outline: 2px solid #a855f7;
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  
+  /* =========================================
+     BOUNCING DONUT
+     4 seconds, with a long resting phase
+     ========================================= */
+  
+  .onboarding-donut-scene {
+    position: relative;
+  
+    width: 200px;
+    height: 225px;
+  }
+  
+  .onboarding-donut-bounce {
+    position: absolute;
+  
+    left: 50%;
+    bottom: 25px;
+  
+    width: 112px;
+    height: 112px;
+  
+    margin-left: -56px;
+  
+    animation: onboarding-donut-jump
+      4s ease-in-out infinite;
+  }
+  
+  .onboarding-donut-shape {
+    width: 100%;
+    height: 100%;
+  
+    box-sizing: border-box;
+  
+    border: 27px solid #a855f7;
+    border-radius: 50%;
+  
+    animation: onboarding-donut-squash
+      4s ease-in-out infinite;
+  }
+  
+  .onboarding-donut-shadow {
+    position: absolute;
+  
+    left: 50%;
+    bottom: 12px;
+  
+    width: 82px;
+    height: 10px;
+  
+    margin-left: -41px;
+  
+    background: rgba(36, 36, 36, 0.13);
+    border-radius: 50%;
+    filter: blur(3px);
+  
+    animation: onboarding-donut-shadow
+      4s ease-in-out infinite;
+  }
+  
+  /*
+    0–10%    resting
+    10–20%   takeoff
+    20–40%   rise
+    40–60%   fall
+    60–65%   soft landing
+    65–100%  resting
+  */
+  
+  @keyframes onboarding-donut-jump {
+    0%,
+    10% {
+      transform: translateY(0);
+    }
+  
+    20% {
+      transform: translateY(-24px);
+    }
+  
+    40% {
+      transform: translateY(-92px);
+    }
+  
+    60%,
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes onboarding-donut-squash {
+    0%,
+    10% {
+      transform: scale(1, 1);
+    }
+  
+    13% {
+      transform: scale(1.12, 0.88);
+    }
+  
+    20% {
+      transform: scale(0.94, 1.08);
+    }
+  
+    40% {
+      transform: scale(1, 1);
+    }
+  
+    58% {
+      transform: scale(0.96, 1.05);
+    }
+  
+    62% {
+      transform: scale(1.13, 0.86);
+    }
+  
+    68%,
+    100% {
+      transform: scale(1, 1);
+    }
+  }
+  
+  @keyframes onboarding-donut-shadow {
+    0%,
+    10%,
+    68%,
+    100% {
+      transform: scaleX(1);
+      opacity: 0.7;
+    }
+  
+    40% {
+      transform: scaleX(0.65);
+      opacity: 0.25;
+    }
+  
+    62% {
+      transform: scaleX(1.15);
+      opacity: 0.85;
+    }
+  }
+  
+  /* =========================================
+     BOUNCING BARS
+     5 seconds, staggered entrance
+     and a long resting phase
+     ========================================= */
+  
+  .onboarding-bars-scene {
+    position: relative;
+  
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  
+    width: 200px;
+    height: 190px;
+  }
+  
+  .onboarding-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 13px;
+  
+    height: 150px;
+    width: 100%;
+  }
+  
+  .onboarding-bar {
+    width: 38px;
+  
+    background: #a855f7;
+    border-radius: 7px 7px 3px 3px;
+  
+    transform-origin: center bottom;
+  
+    animation: onboarding-bar-bounce
+      5s ease-in-out infinite;
+  }
+  
+  .onboarding-bar-one {
+    height: 76px;
+    animation-delay: 0s;
+  }
+  
+  .onboarding-bar-two {
+    height: 133px;
+    animation-delay: 0.2s;
+  }
+  
+  .onboarding-bar-three {
+    height: 102px;
+    animation-delay: 0.4s;
+  }
+  
+  .onboarding-bars-baseline {
+    position: absolute;
+  
+    bottom: 0;
+    left: 50%;
+  
+    width: 166px;
+    height: 2px;
+  
+    transform: translateX(-50%);
+  
+    background: rgba(36, 36, 36, 0.12);
+    border-radius: 2px;
+  }
+  
+  @keyframes onboarding-bar-bounce {
+    0%,
+    12% {
+      transform: scaleY(0.08);
+    }
+  
+    32% {
+      transform: scaleY(1.06);
+    }
+  
+    40% {
+      transform: scaleY(0.97);
+    }
+  
+    48%,
+    85% {
+      transform: scaleY(1);
+    }
+  
+    100% {
+      transform: scaleY(0.08);
+    }
+  }
+  
+  /* =========================================
+     REDUCED MOTION
+     ========================================= */
+  
+  @media (prefers-reduced-motion: reduce) {
+    .onboarding-donut-bounce,
+    .onboarding-donut-shape,
+    .onboarding-donut-shadow,
+    .onboarding-bar {
+      animation: none;
+    }
+  }
+  
