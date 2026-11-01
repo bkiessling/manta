@@ -183,6 +183,8 @@ export default function DataSection({
   minValue = 0,
   maxValue = null,
   mode = "distribution",
+  maxTotal = null,
+  integer = false,
 }) {
   const isProgress = mode === "progress";
 
@@ -259,6 +261,12 @@ export default function DataSection({
         <div className="data-table">
           {visibleData.map((item, index) => {
             const isVisible = item.visible !== false;
+            const rowMax = maxTotal === null ? effectiveMaxValue : Math.max(0,
+              maxTotal - data.reduce((sum, row, i) => sum + (i === index ? 0 : Number(row.value) || 0), 0));
+            const normalize = (raw) => {
+              const n = integer ? Math.round(clampValue(raw)) : clampValue(raw);
+              return rowMax === null ? n : Math.min(n, rowMax);
+            };
 
             return (
               <div
@@ -271,7 +279,7 @@ export default function DataSection({
                     ? "data-row-hidden"
                     : ""
                 }`}
-                key={index}
+                key={item.id ?? index}
               >
                 <input
                   type="text"
@@ -290,8 +298,9 @@ export default function DataSection({
                   type="number"
                   min={effectiveMinValue}
                   max={
-                    effectiveMaxValue ?? undefined
+                    rowMax ?? undefined
                   }
+                  step={integer ? 1 : "any"}
                   value={item.value}
                   aria-label={`Wert für ${
                     item.category ||
@@ -303,14 +312,14 @@ export default function DataSection({
                       "value",
                       event.target.value === ""
                         ? ""
-                        : Number(event.target.value)
+                        : maxTotal === null ? Number(event.target.value) : normalize(event.target.value)
                     )
                   }
                   onBlur={(event) =>
                     updateRow(
                       index,
                       "value",
-                      clampValue(event.target.value)
+                      normalize(event.target.value)
                     )
                   }
                 />

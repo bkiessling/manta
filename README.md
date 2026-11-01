@@ -1,16 +1,113 @@
-# React + Vite
+# MANTA
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Animated charts for vertical video: Donut, Welle, Explosion, Balken and Gruppe.
+All five support MOV/ProRes 4444 export at 1080 × 1920 pixels and 30 FPS.
 
-Currently, two official plugins are available:
+## Local development in VS Code
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Install Node.js 24 and FFmpeg including ffprobe. On macOS with Homebrew:
+`brew install ffmpeg`. Verify `node --version`, `ffmpeg -version` and
+`ffprobe -version` in the VS Code terminal.
 
-## React Compiler
+From the repository folder:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```sh
+npm ci
+```
 
-## Expanding the Oxlint configuration
+Keep these running in separate terminals:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```sh
+npm run server
+```
+
+```sh
+npm run dev
+```
+
+Open the local URL printed by Vite. Select a chart, edit its data, use the Editor
+for animation/appearance and label dragging, then choose Export. There is no ZIP
+import step; obtain this branch using Git as usual. Commit or stash any existing
+local changes before switching branches.
+
+```sh
+npm test
+npm run build
+npm run lint -- src server vite.config.js tests
+```
+
+The repository currently tracks platform-specific node_modules. The cloud
+instance therefore uses Linux dependencies in `/workspace/manta-runtime`, with
+source directories linked to the checkout and `resolve.preserveSymlinks` enabled.
+Run cloud build/dev commands there, and `npm test` in the checkout. Do not commit
+locally generated dependency/cache files with application changes.
+
+## Chart structure and preserved features
+
+Each chart has its own folder in `src/charts`: `donut`, `welle`, `explosion`,
+`bar`, `group`. Each contains a React entry component and its Canvas renderer.
+`components/preview/ChartPreview.jsx` owns playback and label interactions;
+`charts/chartRenderer.js` dispatches to the same chart renderer for preview and
+video frames. The integration is based on main commit `16a02de`, rather than the
+older main used for the first implementation.
+
+- Donut retains hidden categories' angular space, number/percentage formatting,
+  sequential segment animation and its single-visible-category spring. Spring
+  controls remain **Geschwindigkeit** and **Federung**, as on the updated main.
+- Welle retains fill level, wave height and speed. Its wave keeps moving in the
+  preview after the fill animation; export samples a finite portion of the same
+  timeline. Labels show the animated fill value.
+- Explosion retains a growing, thickening number followed by up to 32 particles.
+  The complete 0.65-second particle phase is included in the export. After the
+  burst, the number disappears; use Replay to watch it again.
+- Balken supports up to 12 categories, independent values and colors. Heights
+  scale to the largest value, including hidden categories. Hidden bars leave
+  their slots free. The same animation selector is used as for the other charts.
+- Gruppe supports 1–100 people under Editor → Gestaltung → Anzahl Personen.
+  Each integer data value colors that many people. Unassigned or hidden people
+  stay gray; up to eight categories share the selected total. Reduce assigned
+  values before lowering the total count.
+
+Category visibility and the existing HEX color editor remain available. The
+number/percentage switch changes display formatting; donut percentages reflect
+shares of the full dataset including hidden categories.
+
+## Labels and backgrounds
+
+Enable category/value labels in the Editor, then drag each label block in the
+preview. Hover/focus reveals its handle. Arrow keys move it by 2 design pixels;
+Shift+Arrow by 10. Explosion's main number is draggable too. Each label uses a
+stable row ID so deleting another row does not transfer its position. Positions
+are retained across replay and chart switches and applied to video export.
+“Beschriftungen zurücksetzen” resets positions for the active chart. Text color
+is adjustable for dark backgrounds. Reloading the page currently resets the
+project; project persistence is not implemented.
+
+Under Export, keep the transparent background or select a fixed color. The
+preview and exported frames use the same background, including chart gaps. MOV
+transparency is best checked over another clip in a video editor; ordinary video
+players may display transparent areas as black.
+
+## Export service
+
+The browser creates a job and draws/uploads one PNG at a time, without retaining
+an entire animation ZIP. The server streams PNGs to temporary disk storage,
+encodes with FFmpeg, and reports actual encoded frame counts. The browser's
+download manager receives the finished MOV directly.
+
+Vite proxies relative `/api` requests to `http://127.0.0.1:4318`.
+`EXPORT_SERVER_URL` overrides the Vite target; `PORT`/`HOST` configure the backend
+(default `4318`/`127.0.0.1`). Vite preview uses the same API proxy. For production,
+serve frontend and `/api` on one origin. Preserve the original Host at the
+reverse proxy; a loopback HTTPS termination proxy must send
+`X-Forwarded-Proto: https`. Only loopback forwarding headers are trusted.
+
+Default limits are two active jobs, 900 frames, 8 MiB per PNG, 256 MiB total
+uploaded data, 512 MiB output and two minutes of encoding. Idle jobs expire after
+two minutes; every job expires after ten minutes. Cancellation or leaving the
+export panel aborts uploads/FFmpeg and removes temporary files. Completed or
+broken downloads are cleaned up. After download starts, the browser manages
+that transfer. Capacity exhaustion returns a readable HTTP 429 response.
+
+Jobs live on one server instance. Authentication, per-user quotas, persistent
+jobs and multi-instance coordination are not implemented.

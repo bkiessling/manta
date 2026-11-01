@@ -1,9 +1,15 @@
+import BasicChartAppearance from "./BasicChartAppearance";
 
 export default function AppearanceSection({
   chartType,
   appearance,
   updateSetting,
+  minimumPeople = 1,
 }) {
+  if (chartType === "bar" || chartType === "group") {
+    return <BasicChartAppearance chartType={chartType} appearance={appearance}
+      updateSetting={updateSetting} minimumPeople={minimumPeople} />;
+  }
   if (chartType === "explosion") {
     return (
       <div className="sidebar-section">

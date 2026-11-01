@@ -194,3 +194,24 @@ export const chartPresets = {
     },
   },
 };
+
+
+for (const preset of Object.values(chartPresets)) {
+  preset.defaults.labels.positions = {};
+  preset.defaults.labels.color = "#111111";
+  preset.defaults.output = { transparent: true, backgroundColor: "#f5f5f3" };
+}
+for (const [type, maxRows] of [["bar", 12], ["group", 8]]) {
+  chartPresets[type] = {
+    data: { minRows: 1, maxRows, minValue: 0, maxValue: type === "group" ? 100 : null },
+    defaults: {
+      format: "number",
+      animation: { style: "linear", duration: 2, speed: 50, bounce: 35 },
+      appearance: { size: 85, positionX: 50, positionY: type === "group" ? 35 : 40,
+        gap: type === "group" ? 3 : 8, ...(type === "group" ? { peopleCount: 100 } : {}) },
+      labels: { showCategory: true, showValue: true, fontSize: 12, distance: 24, positions: {}, color: "#111111" },
+      output: { transparent: true, backgroundColor: "#f5f5f3" },
+    },
+    options: { animation: { styles: ["linear", "easeOut", "easeInOut", "spring"] } },
+  };
+}

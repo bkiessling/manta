@@ -7,6 +7,8 @@ import { chartPresets } from "./data/chartPresets";
 import Donut from "./charts/donut/Donut";
 import Welle from "./charts/welle/Welle";
 import Explosion from "./charts/explosion/Explosion";
+import Bar from "./charts/bar/Bar";
+import Group from "./charts/group/Group";
 
 import DataSection from "./components/sidebar/DataSection";
 import ChartSection from "./components/sidebar/ChartSection";
@@ -58,7 +60,7 @@ export default function App() {
     useState("donut");
 
   const [chartDatasets, setChartDatasets] =
-    useState(chartData);
+    useState(() => structuredClone(chartData));
 
   const [chartSettings, setChartSettings] =
     useState(() =>
@@ -84,7 +86,7 @@ export default function App() {
 
   useEffect(() => {
     if (
-      settings?.animation?.style === "spring" &&
+      chartType === "donut" && settings?.animation?.style === "spring" &&
       visibleCategoryCount !== 1
     ) {
       setChartSettings((current) => ({
@@ -125,8 +127,10 @@ export default function App() {
     setData((current) => [
       ...current,
       {
+        id: crypto.randomUUID(),
         category: "Neue Kategorie",
-        value: 10,
+        value: chartType === "group" ? Math.min(10, Math.max(0,
+          settings.appearance.peopleCount - current.reduce((sum, row) => sum + Number(row.value || 0), 0))) : 10,
         color: "#a855f7",
         visible: true,
       },
@@ -166,6 +170,20 @@ export default function App() {
       },
     }));
   };
+
+  const moveLabel = (id, position) => {
+    setChartSettings((current) => ({
+      ...current,
+      [chartType]: {
+        ...current[chartType],
+        labels: { ...current[chartType].labels,
+          positions: { ...current[chartType].labels.positions, [id]: position } },
+      },
+    }));
+  };
+  const Chart = { donut: Donut, bar: Bar, group: Group, welle: Welle, explosion: Explosion }[chartType];
+  const preview = settings && Chart ? <Chart key={`${chartType}-${replay}`} data={data}
+    settings={settings} playAnimation={playAnimation} onLabelMove={moveLabel} /> : null;
 
   const updateFormat = (value) => {
     if (!settings) return;
@@ -291,9 +309,7 @@ export default function App() {
         <aside className="sidebar sidebar-left">
           <div className="panel-heading">
             <span className="eyebrow">
-              {MODES.find(
-                (item) => item.id === mode
-              )?.label.toUpperCase()}
+              {activeMode?.label.toUpperCase()}
             </span>
 
             <h2>
@@ -322,6 +338,8 @@ export default function App() {
               addRow={addRow}
               deleteRow={deleteRow}
               mode="distribution"
+              maxTotal={chartType === "group" ? settings.appearance.peopleCount : null}
+              integer={chartType === "group"}
               minRows={preset.data?.minRows ?? 1}
               maxRows={preset.data?.maxRows ?? null}
               minValue={preset.data?.minValue ?? 0}
@@ -351,6 +369,7 @@ export default function App() {
                 data={data}
                 settings={settings}
                 chartType={chartType}
+                updateSetting={updateSetting}
               />
             )}
         </aside>
@@ -393,166 +412,13 @@ export default function App() {
                   />
                 ) : (
                   <>
-                    {settings &&
-                      chartType === "donut" && (
-                        <DraggableChart
-                          positionX={
-                            settings.appearance
-                              .positionX
-                          }
-                          positionY={
-                            settings.appearance
-                              .positionY
-                          }
-                          size={
-                            settings.appearance.size
-                          }
-                          thickness={
-                            settings.appearance
-                              .thickness
-                          }
-                          onPositionChange={
-                            updateChartPosition
-                          }
-                        >
-                          <Donut
-                            key={`${chartType}-${replay}`}
-                            data={data}
-                            playAnimation={playAnimation}
-                            size={
-                              settings.appearance.size
-                            }
-                            positionX={
-                              settings.appearance
-                                .positionX
-                            }
-                            positionY={
-                              settings.appearance
-                                .positionY
-                            }
-                            thickness={
-                              settings.appearance
-                                .thickness
-                            }
-                            gap={
-                              settings.appearance.gap
-                            }
-                            rotation={
-                              settings.appearance
-                                .rotation
-                            }
-                            showCategory={
-                              settings.labels
-                                .showCategory
-                            }
-                            showValue={
-                              settings.labels
-                                .showValue
-                            }
-                            labelFontSize={
-                              settings.labels.fontSize
-                            }
-                            labelDistance={
-                              settings.labels.distance
-                            }
-                            valueFormat={
-                              settings.format
-                            }
-                            duration={
-                              settings.animation
-                                .duration
-                            }
-                            animationStyle={
-                              settings.animation.style
-                            }
-                            speed={
-                              settings.animation
-                                .speed ?? 50
-                            }
-                            bounce={
-                              settings.animation
-                                .bounce ?? 35
-                            }
-                          />
-                        </DraggableChart>
-                      )}
-
-                    {settings &&
-                      chartType === "welle" && (
-                        <Welle
-                          key={`${chartType}-${replay}`}
-                          data={data}
-                          playAnimation={playAnimation}
-                          duration={
-                            settings.animation
-                              .duration
-                          }
-                          animationStyle={
-                            settings.animation.style
-                          }
-                          waveHeight={
-                            settings.appearance
-                              .waveHeight
-                          }
-                          waveSpeed={
-                            settings.appearance
-                              .waveSpeed
-                          }
-                          showCategory={
-                            settings.labels
-                              .showCategory
-                          }
-                          showValue={
-                            settings.labels.showValue
-                          }
-                          labelFontSize={
-                            settings.labels.fontSize
-                          }
-                          valueFormat={
-                            settings.format
-                          }
-                        />
-                      )}
-
-                    {settings &&
-                      chartType === "explosion" && (
-                        <Explosion
-                          key={`${chartType}-${replay}`}
-                          data={data}
-                          playAnimation={playAnimation}
-                          duration={
-                            settings.animation
-                              .duration
-                          }
-                          animationStyle={
-                            settings.animation.style
-                          }
-                          size={
-                            settings.appearance.size
-                          }
-                          growth={
-                            settings.appearance.growth
-                          }
-                          particleCount={
-                            settings.appearance
-                              .particleCount
-                          }
-                          valueFormat={
-                            settings.format
-                          }
-                        />
-                      )}
-
-                    {![
-                      "donut",
-                      "welle",
-                      "explosion",
-                    ].includes(chartType) && (
-                      <div className="preview-empty">
-                        Für diesen Diagrammtyp
-                        gibt es noch keine Vorschau.
-                      </div>
-                    )}
+                    {settings && chartType === "donut" ? (
+                      <DraggableChart positionX={settings.appearance.positionX}
+                        positionY={settings.appearance.positionY} size={settings.appearance.size}
+                        thickness={settings.appearance.thickness} onPositionChange={updateChartPosition}>
+                        {preview}
+                      </DraggableChart>
+                    ) : preview}
                   </>
                 )}
               </div>
@@ -582,7 +448,7 @@ export default function App() {
             ![
               "donut",
               "welle",
-              "explosion",
+              "explosion", "bar", "group",
             ].includes(chartType) && (
               <div className="panel-note">
                 Für diesen Diagrammtyp
@@ -668,24 +534,18 @@ export default function App() {
               <AppearanceSection
                 chartType={chartType}
                 appearance={settings.appearance}
+                minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
                 updateSetting={updateSetting}
               />
 
-              {chartType !== "explosion" && (
-                <LabelsSection
-                  labels={settings.labels}
-                  updateSetting={updateSetting}
-                />
-              )}
+              <LabelsSection chartType={chartType} labels={settings.labels} updateSetting={updateSetting} />
             </>
           )}
 
           {mode === "export" && (
             <div className="panel-note">
-              MOV mit ProRes 4444 und
-              Alphakanal für Premiere Pro.
-              Der Export wird lokal mit
-              FFmpeg erstellt.
+              MOV mit ProRes 4444 für alle fünf Diagrammtypen.
+              Transparenz oder Hintergrundfarbe sowie verschobene Beschriftungen werden übernommen.
             </div>
           )}
         </aside>

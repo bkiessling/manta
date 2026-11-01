@@ -39,3 +39,9 @@ export const chartData = {
     },
   ],
 };
+
+chartData.bar = chartData.donut.map((row) => ({ ...row }));
+chartData.group = chartData.donut.slice(0, 2).map((row, index) => ({ ...row, value: index ? 25 : 50 }));
+for (const [type, rows] of Object.entries(chartData)) {
+  rows.forEach((row, index) => { row.id = `${type}-${index}`; });
+}

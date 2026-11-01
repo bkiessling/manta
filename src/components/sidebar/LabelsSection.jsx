@@ -1,8 +1,16 @@
 // Sidebar controls for chart labels.
 export default function LabelsSection({
     labels,
+    chartType,
     updateSetting,
   }) {
+    if (chartType === "explosion") return <div className="sidebar-section">
+      <div className="sidebar-section-title">ZAHL VERSCHIEBEN</div>
+      <p className="panel-note">Ziehe die Zahl in der Vorschau oder nutze die Pfeiltasten. Größe und Farbe werden über Darstellung und Daten eingestellt.</p>
+      <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
+        Beschriftungen zurücksetzen
+      </button>
+    </div>;
     return (
       <div className="sidebar-section">
         {/* Section title */}
@@ -13,6 +21,15 @@ export default function LabelsSection({
         {/* Label controls */}
         <div className="section-content">
   
+          <p className="panel-note">Beschriftungen direkt in der Vorschau ziehen oder per Pfeiltasten verschieben. Positionen gelten auch für den Export.</p>
+          <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
+            Beschriftungen zurücksetzen
+          </button>
+          <label className="control">
+            <span className="control-header">TEXTFARBE</span>
+            <input type="color" aria-label="Beschriftungsfarbe" value={labels.color || "#111111"}
+              onChange={(event) => updateSetting("labels", "color", event.target.value)} />
+          </label>
           {/* Category visibility */}
           <label className="checkbox-control">
             <span>KATEGORIE ANZEIGEN</span>

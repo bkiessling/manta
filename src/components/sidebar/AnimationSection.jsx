@@ -29,7 +29,7 @@ export default function AnimationSection({
   const isExplosion = chartType === "explosion";
 
   const springAvailable =
-    visibleCategoryCount === 1;
+    chartType !== "donut" || visibleCategoryCount === 1;
 
   const isSpringAnimation =
     !isExplosion &&
