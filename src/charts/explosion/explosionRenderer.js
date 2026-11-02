@@ -8,7 +8,8 @@ export const PARTICLES = Array.from({ length: 32 }, (_, i) => ({
 export function renderExplosion(ctx, scene, time, { staticPreview = false, label } = {}) {
   const row = scene.rows[0];
   if (!row || row.visible === false) return;
-  const { size = 80, growth = 100, particleCount = 24 } = scene.settings.appearance;
+  const { growth = 100, particleCount = 24 } = scene.settings.appearance;
+  const size = scene.labels.fontSize ?? 80;
   const x = label?.x ?? 180; const y = label?.y ?? 320;
   const duration = scene.animation.duration;
   if (staticPreview || time < duration) {

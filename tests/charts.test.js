@@ -3,15 +3,17 @@ import assert from "node:assert/strict";
 import { createChartScene, renderChartFrame, getChartLabels, chartNames } from "../src/charts/chartRenderer.js";
 import { chartPresets } from "../src/data/chartPresets.js";
 import { chartData } from "../src/data/chartData.js";
+import { getBarLayout } from "../src/charts/bar/barRenderer.js";
+import { groupPulse, GROUP_PULSE_DURATION } from "../src/charts/group/groupRenderer.js";
 import { waveValue } from "../src/charts/welle/welleRenderer.js";
 
 function ctx() {
   const stack = [];
   return {
-    rects: [], arcs: [], text: [], points: [], globalAlpha: 1, globalCompositeOperation: "source-over",
+    rects: [], arcs: [], text: [], points: [], fills: [], globalAlpha: 1, globalCompositeOperation: "source-over",
     save() { stack.push({ globalAlpha: this.globalAlpha, globalCompositeOperation: this.globalCompositeOperation }); },
     restore() { Object.assign(this, stack.pop()); },
-    clearRect() {}, setTransform() {}, beginPath() {}, closePath() {}, stroke() {}, fill() {},
+    clearRect() {}, setTransform() {}, beginPath() {}, closePath() {}, stroke() {}, fill() { this.fills.push(this.fillStyle); },
     translate() {}, scale() {}, roundRect() {}, strokeText() {},
     arc(...args) { this.arcs.push(args); },
     moveTo(...args) { this.points.push(args); }, lineTo(...args) { this.points.push(args); },
@@ -98,14 +100,14 @@ test("explosion retains growing number, particle phase and the complete burst in
 });
 
 test("bars preserve value ratios, hidden categories and absolute number formatting", () => {
-  const s = settings("bar");const scene = createChartScene(chartData.bar, s, "bar");
+  const s = settings("bar");s.appearance.orientation = "vertical";const scene = createChartScene(chartData.bar, s, "bar");
   const c = ctx();renderChartFrame(c, scene);
   assert.equal(c.rects.length, 3);
   assert.ok(Math.abs(c.rects[1].args[3] / c.rects[0].args[3] - 20 / 70) < 0.000001);
   assert.ok(c.text.some((l) => l.text === "70"));
 });
 
-test("group allocates integer counts up to 100 and keeps hidden categories neutral", () => {
+test("group allocates integer counts up to 100 and leaves hidden category slots empty", () => {
   const s = settings("group");const scene = createChartScene(chartData.group, s, "group");
   assert.equal(scene.peopleCount, 100);assert.equal(scene.people.length, 75);
   const hidden = structuredClone(chartData.group);hidden[0].visible = false;
@@ -130,4 +132,52 @@ test("all chart types retain stable draggable labels and selectable backgrounds"
     assert.equal(c.rects.at(-1).color, "#123456");
     assert.equal(c.rects.at(-1).composite, "destination-over");
   }
+});
+
+
+test("font size means the same pixels for labels on all five charts", () => {
+  for (const type of Object.keys(chartNames)) {
+    const s = settings(type);s.labels.fontSize = 30;s.labels.showCategory = true;s.labels.showValue = true;
+    assert.ok(getChartLabels(createChartScene(chartData[type], s, type)).every((label) => label.fontSize === 30));
+  }
+});
+
+test("horizontal bars use length ratios and distinct left-side label positions", () => {
+  const s = settings("bar");s.appearance.orientation = "vertical";const vertical = createChartScene(chartData.bar, s, "bar");
+  const vLabel = getChartLabels(vertical)[0];
+  s.labels.positions[vLabel.id] = { x: -10, y: 20 };
+  s.appearance.orientation = "horizontal";
+  const horizontal = createChartScene(chartData.bar, s, "bar");
+  const c = ctx();renderChartFrame(c, horizontal);
+  assert.ok(Math.abs(c.rects[1].args[2] / c.rects[0].args[2] - 20 / 70) < 0.000001);
+  const plot = getBarLayout(horizontal);
+  const labels = getChartLabels(horizontal);
+  assert.ok(labels[0].x + labels[0].width / 2 < plot.left);
+  assert.equal(labels[0].y, plot.top + plot.step / 2);
+  assert.notEqual(labels[0].id, vLabel.id);
+  s.appearance.orientation = "vertical";
+  assert.equal(getChartLabels(createChartScene(chartData.bar, s, "bar"))[0].y, vLabel.y + 20);
+});
+
+test("group people appear without gray placeholders individually or per category", () => {
+  const s = settings("group");let scene = createChartScene(chartData.group, s, "group");
+  const start = ctx();renderChartFrame(start, scene, 0);assert.equal(start.arcs.length, 0);
+  const single = ctx();renderChartFrame(single, scene, scene.animation.duration * 0.02);
+  assert.equal(single.arcs.length, 2, "only the first two people have begun appearing");
+  s.animation.groupMode = "category";scene = createChartScene(chartData.group, s, "group");
+  const batch = ctx();renderChartFrame(batch, scene, scene.animation.duration * 0.02);
+  assert.equal(batch.arcs.length, 50, "the whole first category appears together");
+  const final = ctx();renderChartFrame(final, scene);
+  assert.equal(final.arcs.length, 75);
+  assert.ok(!final.fills.includes("#b5b5bc"));
+});
+
+test("optional group pulse ends at original size and is included in export duration", () => {
+  const s = settings("group");const normal = createChartScene(chartData.group, s, "group");
+  s.animation.pulse = true;const pulse = createChartScene(chartData.group, s, "group");
+  assert.ok(pulse.totalDuration > normal.totalDuration);
+  assert.equal(pulse.totalDuration, pulse.animation.duration + GROUP_PULSE_DURATION);
+  assert.equal(groupPulse(pulse, pulse.animation.duration), 1);
+  assert.ok(groupPulse(pulse, pulse.animation.duration + GROUP_PULSE_DURATION / 2) > 1.07);
+  assert.equal(groupPulse(pulse, (pulse.frameCount - 1) / 30), 1);
 });

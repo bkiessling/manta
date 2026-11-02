@@ -10,7 +10,7 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
   const timeRef = useRef(0);
   const dragRef = useRef(null);
   const scene = useMemo(() => createChartScene(data, settings, chartType), [data, settings, chartType]);
-  const { style, duration, speed, bounce } = settings.animation;
+  const { style, duration, speed, bounce, groupMode, pulse } = settings.animation;
 
   useEffect(() => {
     sceneRef.current = scene;
@@ -35,7 +35,7 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
     };
     request = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(request);
-  }, [playAnimation, chartType, settings.diagram?.mode, style, duration, speed, bounce]);
+  }, [playAnimation, chartType, settings.diagram?.mode, style, duration, speed, bounce, groupMode, pulse]);
 
   const move = (label, x, y) => {
     const cx = Math.max(label.width / 2 + 4, Math.min(356 - label.width / 2, x));

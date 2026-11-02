@@ -1,3 +1,4 @@
+import SegmentedControl from "./SegmentedControl";
 
 import {
   useEffect,
@@ -173,6 +174,17 @@ export default function AnimationSection({
       </div>
 
       <div className="section-content">
+        {chartType === "group" && <>
+          <div className="control"><div className="control-header">PERSONEN EINBLENDEN</div>
+            <SegmentedControl label="Personen einblenden" value={animation.groupMode || "individual"}
+              options={[{ value: "individual", label: "Einzeln" }, { value: "category", label: "Je Kategorie" }]}
+              onChange={(mode) => updateSetting("animation", "groupMode", mode)} />
+          </div>
+          <label className="checkbox-control"><span>ZUM ABSCHLUSS PULSIEREN</span>
+            <input type="checkbox" checked={Boolean(animation.pulse)}
+              onChange={(event) => updateSetting("animation", "pulse", event.target.checked)} />
+          </label>
+        </>}
         {!isExplosion && (
           <div className="control">
             <div className="control-header">

@@ -9,20 +9,30 @@ function drawPerson(ctx, x, y, width, color, scale = 1) {
   }
   ctx.restore();
 }
+export const GROUP_PULSE_DURATION = 0.8;
+
+export function groupPulse(scene, time) {
+  if (!scene.settings.animation.pulse) return 1;
+  const t = (time - scene.animation.duration) / GROUP_PULSE_DURATION;
+  return t > 0 && t < 1 ? 1 + 0.08 * Math.sin(Math.PI * t) ** 2 : 1;
+}
+
 export function renderGroup(ctx, scene, time) {
   const progress = scene.animation.progressAt(time);
   const columns = Math.ceil(Math.sqrt(scene.peopleCount));
   const cell = scene.width / columns;
-  for (let i = 0; i < scene.peopleCount; i++) {
-    const x = scene.cx - scene.width / 2 + (i % columns + 0.5) * cell;
-    const y = scene.cy - scene.height / 2 + (Math.floor(i / columns) + 0.5) * cell * 1.5;
+  const categoryMode = scene.settings.animation.groupMode === "category";
+  const pulse = groupPulse(scene, time);
+  for (const person of scene.personStates) {
+    const reveal = categoryMode
+      ? clamp(progress * scene.visibleGroupCount - person.categoryOrder)
+      : clamp(progress * scene.personStates.length - person.order);
+    if (reveal <= 0) continue;
+    const x = scene.cx - scene.width / 2 + (person.slot % columns + 0.5) * cell;
+    const y = scene.cy - scene.height / 2 + (Math.floor(person.slot / columns) + 0.5) * cell * 1.5;
     const width = Math.max(2, cell - scene.gap);
-    drawPerson(ctx, x, y, width, "#b5b5bc");
-    if (scene.people[i]) {
-      const reveal = clamp(progress * scene.peopleCount - i);
-      ctx.save(); ctx.globalAlpha = reveal;
-      drawPerson(ctx, x, y, width, scene.people[i], 0.6 + reveal * 0.4);
-      ctx.restore();
-    }
+    ctx.save(); ctx.globalAlpha = reveal;
+    drawPerson(ctx, x, y, width, person.color, (0.6 + reveal * 0.4) * pulse);
+    ctx.restore();
   }
 }

@@ -12,6 +12,7 @@ import Group from "./charts/group/Group";
 
 import DataSection from "./components/sidebar/DataSection";
 import ChartSection from "./components/sidebar/ChartSection";
+import SegmentedControl from "./components/sidebar/SegmentedControl";
 import LabelsSection from "./components/sidebar/LabelsSection";
 import AppearanceSection from "./components/sidebar/AppearanceSection";
 import AnimationSection from "./components/sidebar/AnimationSection";
@@ -463,59 +464,9 @@ export default function App() {
               </div>
 
               <div className="section-content">
-                <div
-                  role="radiogroup"
-                  aria-label="Format"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="value-format"
-                      value="number"
-                      checked={
-                        settings.format === "number"
-                      }
-                      onChange={() =>
-                        updateFormat("number")
-                      }
-                    />
-                    Zahl
-                  </label>
-
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="value-format"
-                      value="percent"
-                      checked={
-                        settings.format === "percent"
-                      }
-                      onChange={() =>
-                        updateFormat("percent")
-                      }
-                    />
-                    Prozent
-                  </label>
-                </div>
+                <SegmentedControl label="Format" value={settings.format}
+                  options={[{ value: "number", label: "Zahl" }, { value: "percent", label: "Prozent" }]}
+                  onChange={updateFormat} />
 
                 <p
                   className="panel-note"

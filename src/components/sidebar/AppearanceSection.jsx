@@ -20,30 +20,6 @@ export default function AppearanceSection({
         <div className="section-content">
           <div className="control">
             <div className="control-header">
-              <span>GRÖSSE</span>
-              <span>
-                {appearance.size ?? 80}
-              </span>
-            </div>
-
-            <input
-              type="range"
-              min="20"
-              max="180"
-              step="1"
-              value={appearance.size ?? 80}
-              onChange={(event) =>
-                updateSetting(
-                  "appearance",
-                  "size",
-                  Number(event.target.value)
-                )
-              }
-            />
-          </div>
-
-          <div className="control">
-            <div className="control-header">
               <span>AUFBLÄHUNG</span>
               <span>
                 {appearance.growth ?? 100}%

@@ -1,116 +1,48 @@
-// Sidebar controls for chart labels.
-export default function LabelsSection({
-    labels,
-    chartType,
-    updateSetting,
-  }) {
-    if (chartType === "explosion") return <div className="sidebar-section">
-      <div className="sidebar-section-title">ZAHL VERSCHIEBEN</div>
-      <p className="panel-note">Ziehe die Zahl in der Vorschau oder nutze die Pfeiltasten. Größe und Farbe werden über Darstellung und Daten eingestellt.</p>
+import { useEffect, useState } from "react";
+
+function FontSize({ size, onChange }) {
+  const [draft, setDraft] = useState(String(size));
+  useEffect(() => setDraft(String(size)), [size]);
+  const commit = () => {
+    const n = Math.max(8, Math.min(180, Math.round(Number(draft) || size)));
+    setDraft(String(n)); onChange(n);
+  };
+  return <label className="control">
+    <span className="control-header">SCHRIFTGRÖSSE</span>
+    <span className="font-size-input"><input type="number" aria-label="Schriftgröße"
+      min="8" max="180" step="1" value={draft}
+      onChange={(event) => {
+        const raw = event.target.value; setDraft(raw);
+        const n = Number(raw);
+        if (raw && Number.isInteger(n) && n >= 8 && n <= 180) onChange(n);
+      }} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") { commit(); event.currentTarget.blur(); } }} />
+      <span>px</span></span>
+  </label>;
+}
+
+export default function LabelsSection({ labels, chartType, updateSetting }) {
+  const primaryNumber = chartType === "explosion";
+  return <div className="sidebar-section">
+    <div className="sidebar-section-title">BESCHRIFTUNG</div>
+    <div className="section-content">
+      <FontSize size={labels.fontSize ?? (primaryNumber ? 80 : 12)}
+        onChange={(size) => updateSetting("labels", "fontSize", size)} />
+      <p className="panel-note">{primaryNumber ? "Die Zahl" : "Beschriftungen"} direkt in der Vorschau ziehen oder per Pfeiltasten verschieben. Positionen gelten auch für den Export.</p>
       <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
         Beschriftungen zurücksetzen
       </button>
-    </div>;
-    return (
-      <div className="sidebar-section">
-        {/* Section title */}
-        <div className="sidebar-section-title">
-          BESCHRIFTUNG
-        </div>
-  
-        {/* Label controls */}
-        <div className="section-content">
-  
-          <p className="panel-note">Beschriftungen direkt in der Vorschau ziehen oder per Pfeiltasten verschieben. Positionen gelten auch für den Export.</p>
-          <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
-            Beschriftungen zurücksetzen
-          </button>
-          <label className="control">
-            <span className="control-header">TEXTFARBE</span>
-            <input type="color" aria-label="Beschriftungsfarbe" value={labels.color || "#111111"}
-              onChange={(event) => updateSetting("labels", "color", event.target.value)} />
-          </label>
-          {/* Category visibility */}
-          <label className="checkbox-control">
-            <span>KATEGORIE ANZEIGEN</span>
-  
-            <input
-              type="checkbox"
-              checked={labels.showCategory}
-              onChange={(event) =>
-                updateSetting(
-                  "labels",
-                  "showCategory",
-                  event.target.checked
-                )
-              }
-            />
-          </label>
-  
-          {/* Value visibility */}
-          <label className="checkbox-control">
-            <span>WERTE ANZEIGEN</span>
-  
-            <input
-              type="checkbox"
-              checked={labels.showValue}
-              onChange={(event) =>
-                updateSetting(
-                  "labels",
-                  "showValue",
-                  event.target.checked
-                )
-              }
-            />
-          </label>
-  
-          {/* Label font size */}
-          <div className="control label-control">
-            <div className="control-header">
-              <span>GRÖSSE</span>
-              <span>{labels.fontSize}</span>
-            </div>
-  
-            <input
-              type="range"
-              min="8"
-              max="32"
-              step="1"
-              value={labels.fontSize}
-              onChange={(event) =>
-                updateSetting(
-                  "labels",
-                  "fontSize",
-                  Number(event.target.value)
-                )
-              }
-            />
-          </div>
-  
-          {/* Distance from chart */}
-          <div className="control">
-            <div className="control-header">
-              <span>POSITION</span>
-              <span>{labels.distance}</span>
-            </div>
-  
-            <input
-              type="range"
-              min="-40"
-              max="80"
-              step="1"
-              value={labels.distance}
-              onChange={(event) =>
-                updateSetting(
-                  "labels",
-                  "distance",
-                  Number(event.target.value)
-                )
-              }
-            />
-          </div>
-  
-        </div>
-      </div>
-    );
-  }
+      {!primaryNumber && <>
+        <label className="control"><span className="control-header">TEXTFARBE</span>
+          <input type="color" aria-label="Beschriftungsfarbe" value={labels.color || "#111111"}
+            onChange={(event) => updateSetting("labels", "color", event.target.value)} />
+        </label>
+        <label className="checkbox-control"><span>KATEGORIE ANZEIGEN</span>
+          <input type="checkbox" checked={labels.showCategory} onChange={(event) => updateSetting("labels", "showCategory", event.target.checked)} />
+        </label>
+        <label className="checkbox-control"><span>WERTE ANZEIGEN</span>
+          <input type="checkbox" checked={labels.showValue} onChange={(event) => updateSetting("labels", "showValue", event.target.checked)} />
+        </label>
+      </>}
+    </div>
+  </div>;
+}

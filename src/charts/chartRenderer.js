@@ -1,5 +1,5 @@
-import { renderBars } from "./bar/barRenderer.js";
-import { renderGroup } from "./group/groupRenderer.js";
+import { renderBars, getBarLayout } from "./bar/barRenderer.js";
+import { renderGroup, GROUP_PULSE_DURATION } from "./group/groupRenderer.js";
 import { renderWave, waveValue } from "./welle/welleRenderer.js";
 import { renderExplosion, BURST_DURATION } from "./explosion/explosionRenderer.js";
 import { formatChartValue } from "../utils/formatChartValue.js";
@@ -23,17 +23,27 @@ export function createChartScene(data, settings, chartType = "donut") {
   }));
   const peopleCount = clamp(Math.round(value(settings.appearance?.peopleCount, 100)), 1, 100);
   const people = [];
+  const personStates = [];
+  let visibleGroupCount = 0;
   for (const row of rows) {
     const count = Math.min(Math.floor(row.value), peopleCount - people.length);
-    for (let i = 0; i < count; i++) people.push(row.visible === false ? null : row.color);
+    const visible = row.visible !== false && count > 0;
+    const categoryOrder = visibleGroupCount;
+    if (visible) visibleGroupCount++;
+    for (let i = 0; i < count; i++) {
+      const slot = people.length;
+      people.push(visible ? row.color : null);
+      if (visible) personStates.push({ slot, color: row.color, categoryOrder, order: personStates.length });
+    }
   }
   const width = 280 * value(settings.appearance?.size, 85) / 100;
   const height = chartType === "bar" ? width : Math.ceil(peopleCount / Math.ceil(Math.sqrt(peopleCount))) * width / Math.ceil(Math.sqrt(peopleCount)) * 1.5;
   const labelsVisible = rows.length > 0 && (base.labels.showCategory || base.labels.showValue);
   const totalDuration = base.animation.duration + (chartType === "explosion" ? BURST_DURATION
-    : chartType === "welle" ? 0 : labelsVisible ? 0.35 : 0);
+    : chartType === "welle" ? 0
+    : Math.max(labelsVisible ? 0.35 : 0, chartType === "group" && settings.animation.pulse ? GROUP_PULSE_DURATION : 0));
   return {
-    ...base, settings, type: chartType, rows, width, height, peopleCount, people,
+    ...base, settings, type: chartType, rows, width, height, peopleCount, people, personStates, visibleGroupCount,
     totalDuration, frameCount: Math.ceil(totalDuration * FPS) + 1,
     output: settings.output ?? { transparent: true },
   };
@@ -42,7 +52,7 @@ export function createChartScene(data, settings, chartType = "donut") {
 export function getChartLabels(scene, time = scene.totalDuration, options = {}) {
   const { labels, rows, cx, cy, outerRadius, width, height } = scene;
   if (scene.type !== "explosion" && !labels.showCategory && !labels.showValue) return [];
-  const fontSize = scene.type === "explosion" ? value(scene.settings.appearance.size, 80) : value(labels.fontSize, 12) * (scene.type === "welle" ? 2 : 1);
+  const fontSize = value(labels.fontSize, scene.type === "explosion" ? 80 : 12);
   let cumulative = scene.rotation;
   const total = rows.reduce((sum, row) => sum + row.value, 0);
   return rows.flatMap((row, index) => {
@@ -50,27 +60,28 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
     let y;
     let text = formatChartValue(row.value, scene.settings.format);
     let startAt = scene.animation.duration;
+    const barPlot = scene.type === "bar" ? getBarLayout(scene) : null;
     if (scene.type === "donut") {
       const fraction = scene.isProgress ? clamp(row.value, 0, 100) / 100 : total > 0 ? row.value / total : 0;
       if ((scene.isProgress && index > 0) || fraction <= 0) return [];
       const angle = (cumulative + fraction * 180 - 90) * Math.PI / 180;
       cumulative += fraction * 360;
-      const radius = outerRadius + value(labels.distance, 24);
+      const radius = outerRadius + 24;
       x = cx + Math.cos(angle) * radius;
       y = cy + Math.sin(angle) * radius;
       text = formatChartValue(scene.settings.format === "percent" ? fraction * 100 : row.value, scene.settings.format);
       startAt = scene.animationStyle === "spring" ? scene.animation.duration : scene.animation.duration * (cumulative - scene.rotation) / 360;
     } else if (scene.type === "welle" || scene.type === "explosion") {
       if (index > 0) return [];
-      x = 180; y = scene.type === "welle" ? 320 + value(labels.distance, 24) - 24 : 320; startAt = 0;
+      x = 180; y = 320; startAt = 0;
       if (scene.type === "welle") text = formatChartValue(Math.round(waveValue(scene, time, options.staticPreview)), scene.settings.format);
     } else if (scene.type === "bar") {
-      x = cx - width / 2 + (index + 0.5) * width / rows.length;
-      y = cy + height / 2 + value(labels.distance, 24);
+      x = barPlot.horizontal ? barPlot.left - 40 : barPlot.left + (index + 0.5) * barPlot.step;
+      y = barPlot.horizontal ? barPlot.top + (index + 0.5) * barPlot.step : cy + height / 2 + 24;
     } else {
       const columns = Math.min(2, rows.length);
       x = cx + (index % columns - (columns - 1) / 2) * width / columns;
-      y = cy + height / 2 + value(labels.distance, 24) + Math.floor(index / columns) * fontSize * 3;
+      y = cy + height / 2 + 24 + Math.floor(index / columns) * fontSize * 3;
     }
     if (row.visible === false) return [];
     const lines = [];
@@ -79,14 +90,16 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
     if (scene.type !== "explosion" && labels.showValue) lines.push(text);
     const labelWidth = Math.min(336, Math.max(32, ...lines.map((line) => line.length * fontSize * 0.7)));
     const labelHeight = lines.length * fontSize * 1.2;
+    if (barPlot?.horizontal) x = barPlot.left - 8 - labelWidth / 2;
     const minX = labelWidth / 2 + 4;
     const minY = labelHeight / 2 + 4;
-    const offset = labels.positions?.[row.id] ?? {};
+    const id = scene.type === "bar" ? `${row.id}:${barPlot.horizontal ? "horizontal" : "vertical"}` : row.id;
+    const offset = labels.positions?.[id] ?? {};
     // Keep labels reachable even when the ring extends outside the canvas.
     const anchorX = clamp(x, minX, DESIGN_WIDTH - minX);
     const anchorY = clamp(y, minY, DESIGN_HEIGHT - minY);
     return [{
-      id: row.id, startAt, lines, fontSize, width: labelWidth, height: labelHeight,
+      id, startAt, lines, fontSize, width: labelWidth, height: labelHeight,
       x: clamp(anchorX + value(offset.x), minX, DESIGN_WIDTH - minX),
       y: clamp(anchorY + value(offset.y), minY, DESIGN_HEIGHT - minY),
       anchorX, anchorY,

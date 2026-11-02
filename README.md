@@ -60,22 +60,33 @@ older main used for the first implementation.
 - Explosion retains a growing, thickening number followed by up to 32 particles.
   The complete 0.65-second particle phase is included in the export. After the
   burst, the number disappears; use Replay to watch it again.
-- Balken supports up to 12 categories, independent values and colors. Heights
-  scale to the largest value, including hidden categories. Hidden bars leave
-  their slots free. The same animation selector is used as for the other charts.
+- Balken supports up to 12 categories, independent values and colors. Choose
+  **Balken** (horizontal) or **Säulen** (vertical) under Editor → Ausrichtung.
+  Lengths/heights scale to the largest value, including hidden categories.
+  Labels start to the left of horizontal bars or below vertical columns. Each
+  orientation retains its own dragged label positions. The same animation
+  selector is used as for the other charts.
 - Gruppe supports 1–100 people under Editor → Gestaltung → Anzahl Personen.
-  Each integer data value colors that many people. Unassigned or hidden people
-  stay gray; up to eight categories share the selected total. Reduce assigned
-  values before lowering the total count.
+  Each integer data value adds that many people in the category color. Empty
+  or hidden slots are not drawn: there are no gray placeholders. Under Animation,
+  choose **Einzeln** to reveal people one after another, or **Je Kategorie** to
+  reveal each entire category together. **Zum Abschluss pulsieren** adds one
+  gentle 0.8-second pulse after the reveal, including its return to original size
+  in the exported video. Up to eight categories share the selected maximum.
+  Reduce assigned values before lowering that maximum.
 
 Category visibility and the existing HEX color editor remain available. The
-number/percentage switch changes display formatting; donut percentages reflect
+number/percentage switch uses the same segmented button style as the navigation,
+with native radio keyboard support, and changes display formatting; donut percentages reflect
 shares of the full dataset including hidden categories.
 
 ## Labels and backgrounds
 
-Enable category/value labels in the Editor, then drag each label block in the
-preview. Hover/focus reveals its handle. Arrow keys move it by 2 design pixels;
+Set **Schriftgröße** as a numerical pixel value in the right sidebar for every
+chart, including Explosion's main number. The value is used directly for all
+chart types. Label positions are controlled by drag and drop; there is no label
+distance slider. Enable category/value labels in the Editor, then drag each
+label block in the preview. Hover/focus reveals its handle. Arrow keys move it by 2 design pixels;
 Shift+Arrow by 10. Explosion's main number is draggable too. Each label uses a
 stable row ID so deleting another row does not transfer its position. Positions
 are retained across replay and chart switches and applied to video export.
