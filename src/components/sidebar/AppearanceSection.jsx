@@ -149,56 +149,6 @@ export default function AppearanceSection({
           <>
             <div className="control">
               <div className="control-header">
-                <span>GRÖSSE</span>
-                <span>
-                  {appearance.size}%
-                </span>
-              </div>
-
-              <input
-                type="range"
-                min="20"
-                max="100"
-                step="1"
-                value={appearance.size}
-                onChange={(event) =>
-                  updateSetting(
-                    "appearance",
-                    "size",
-                    Number(event.target.value)
-                  )
-                }
-              />
-            </div>
-
-            <div className="control">
-              <div className="control-header">
-                <span>ROTATION</span>
-                <span>
-                  {appearance.rotation ?? 0}°
-                </span>
-              </div>
-
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="1"
-                value={
-                  appearance.rotation ?? 0
-                }
-                onChange={(event) =>
-                  updateSetting(
-                    "appearance",
-                    "rotation",
-                    Number(event.target.value)
-                  )
-                }
-              />
-            </div>
-
-            <div className="control">
-              <div className="control-header">
                 <span>RINGSTÄRKE</span>
                 <span>
                   {appearance.thickness}%

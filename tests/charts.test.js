@@ -113,8 +113,8 @@ test("group allocates integer counts up to 100 and leaves hidden category slots 
   const hidden = structuredClone(chartData.group);hidden[0].visible = false;
   const hiddenScene = createChartScene(hidden, s, "group");
   assert.equal(hiddenScene.people.filter(Boolean).length, 25);
-  for (const [requested, expected] of [[0, 1], [30, 30], [200, 100]]) {
-    s.appearance.peopleCount = requested;
+  for (const [columns, rows, expected] of [[0, 0, 1], [3, 10, 30], [20, 20, 100]]) {
+    s.appearance.gridColumns = columns;s.appearance.gridRows = rows;
     const limited = createChartScene(chartData.group, s, "group");
     assert.equal(limited.peopleCount, expected);assert.ok(limited.people.length <= expected);
   }
@@ -199,4 +199,27 @@ test("inline labels place value after category and end placement follows column 
   const labels = getChartLabels(scene);
   assert.deepEqual(labels[0].lines, ["Instagram · 70"]);
   assert.ok(labels[0].y < scene.cy - scene.height / 2);
+});
+
+
+test("transformed label coordinates invert correctly after rotation and proportional scaling", async () => {
+  const { chartTransform, transformPoint } = await import("../src/charts/transform.js");
+  for (const type of Object.keys(chartNames)) {
+    const s = settings(type);s.appearance.transformScale = 1.7;s.appearance.transformRotation = 37;
+    const t = chartTransform(createChartScene(chartData[type], s, type));
+    const original = { x: 110, y: 260 };
+    const restored = transformPoint(transformPoint(original, t), t, true);
+    assert.ok(Math.abs(restored.x - original.x) < 1e-8);
+    assert.ok(Math.abs(restored.y - original.y) < 1e-8);
+  }
+});
+
+
+test("group grid starts at 10 by 10 and uses explicit row and column geometry", () => {
+  const s = settings("group");
+  assert.equal(s.appearance.gridColumns, 10);assert.equal(s.appearance.gridRows, 10);
+  s.appearance.gridColumns = 5;s.appearance.gridRows = 15;
+  const scene = createChartScene(chartData.group, s, "group");
+  assert.equal(scene.people.length, 75);assert.equal(scene.gridColumns, 5);
+  assert.ok(Math.abs(scene.height / scene.width - 4.5) < 1e-8);
 });

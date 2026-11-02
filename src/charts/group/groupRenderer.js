@@ -19,7 +19,7 @@ export function groupPulse(scene, time) {
 
 export function renderGroup(ctx, scene, time) {
   const progress = scene.animation.progressAt(time);
-  const columns = Math.ceil(Math.sqrt(scene.peopleCount));
+  const columns = scene.gridColumns;
   const cell = scene.width / columns;
   const categoryMode = scene.settings.animation.groupMode === "category";
   const pulse = groupPulse(scene, time);

@@ -7,7 +7,7 @@ export const PARTICLES = Array.from({ length: 32 }, (_, i) => ({
 }));
 export function renderExplosion(ctx, scene, time, { staticPreview = false, label } = {}) {
   const row = scene.rows[0];
-  if (!row || row.visible === false) return;
+  if (!row || row.visible === false || (!scene.labels.showValue && !scene.labels.showCategory)) return;
   const { growth = 100, particleCount = 24 } = scene.settings.appearance;
   const size = scene.labels.fontSize ?? 80;
   const x = label?.x ?? 180; const y = label?.y ?? 320;
@@ -16,13 +16,18 @@ export function renderExplosion(ctx, scene, time, { staticPreview = false, label
     const t = staticPreview ? 0 : Math.max(0, time / duration);
     const scale = 1 + Math.max(0, Math.min(200, growth)) / 100 * t;
     ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-    ctx.fillStyle = row.color; ctx.strokeStyle = row.color;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = scene.labels.color || row.color; ctx.strokeStyle = scene.labels.color || row.color;
+    ctx.textAlign = scene.labels.align || "center"; ctx.textBaseline = "middle";
     ctx.font = `900 ${Math.max(20, Math.min(180, size))}px Arial Black, Arial, sans-serif`;
     ctx.lineWidth = 7 * t; ctx.lineJoin = "round";
-    const text = formatChartValue(row.value, scene.settings.format);
-    if (t > 0) ctx.strokeText(text, 0, 0);
-    ctx.fillText(text, 0, 0); ctx.restore();
+    const lines = label?.lines ?? [formatChartValue(row.value, scene.settings.format)];
+    const textX = scene.labels.align === "left" ? -(label?.width ?? 0) / 2 : scene.labels.align === "right" ? (label?.width ?? 0) / 2 : 0;
+    for (const [i, text] of lines.entries()) {
+      const y = (i - (lines.length - 1) / 2) * size * 1.2;
+      if (t > 0) ctx.strokeText(text, textX, y);
+      ctx.fillText(text, textX, y);
+    }
+ ctx.restore();
   } else if (time < duration + BURST_DURATION) {
     const t = Math.max(0, Math.min(1, (time - duration) / BURST_DURATION));
     const motion = easeOut(t);

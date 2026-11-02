@@ -203,7 +203,7 @@ for (const [type, maxRows] of [["bar", 12], ["group", 8]]) {
       format: "number",
       animation: { style: "linear", duration: 2, speed: 50, bounce: 35 },
       appearance: { size: 85, positionX: 50, positionY: type === "group" ? 35 : 40,
-        gap: type === "group" ? 3 : 8, ...(type === "group" ? { peopleCount: 100 } : {}) },
+        gap: type === "group" ? 3 : 8, ...(type === "group" ? { gridColumns: 10, gridRows: 10 } : {}) },
       labels: { showCategory: true, showValue: true, fontSize: 12, positions: {}, color: "#111111" },
       output: { transparent: true, backgroundColor: "#f5f5f3" },
     },
@@ -221,3 +221,5 @@ chartPresets.group.defaults.animation.pulse = false;
 for (const preset of Object.values(chartPresets)) {
   if (preset.options.labels) preset.options.labels.controls = ["showCategory", "showValue", "fontSize"];
 }
+
+chartPresets.explosion.defaults.labels.showValue = true;

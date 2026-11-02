@@ -1,3 +1,4 @@
+import { chartTransform, transformPoint } from "./transform.js";
 import { renderBars, getBarLayout } from "./bar/barRenderer.js";
 import { renderGroup, GROUP_PULSE_DURATION } from "./group/groupRenderer.js";
 import { renderWave, waveValue } from "./welle/welleRenderer.js";
@@ -21,7 +22,9 @@ export function createChartScene(data, settings, chartType = "donut") {
     ...item, id: item.id ?? `row-${index}`, value: Math.max(0, value(item.value)),
     color: item.color || "#a855f7",
   }));
-  const peopleCount = clamp(Math.round(value(settings.appearance?.peopleCount, 100)), 1, 100);
+  const gridColumns = clamp(Math.round(value(settings.appearance?.gridColumns, 10)), 1, 20);
+  const gridRows = clamp(Math.round(value(settings.appearance?.gridRows, 10)), 1, 20);
+  const peopleCount = Math.min(100, gridColumns * gridRows);
   const people = [];
   const personStates = [];
   let visibleGroupCount = 0;
@@ -36,14 +39,16 @@ export function createChartScene(data, settings, chartType = "donut") {
       if (visible) personStates.push({ slot, color: row.color, categoryOrder, order: personStates.length });
     }
   }
-  const width = 280 * value(settings.appearance?.size, 85) / 100;
-  const height = chartType === "bar" ? width : Math.ceil(peopleCount / Math.ceil(Math.sqrt(peopleCount))) * width / Math.ceil(Math.sqrt(peopleCount)) * 1.5;
+  let width = 280 * value(settings.appearance?.size, 85) / 100;
+  const cell = Math.min(width / gridColumns, 420 * value(settings.appearance?.size, 85) / 100 / (gridRows * 1.5));
+  const height = chartType === "group" ? cell * gridRows * 1.5 : width;
+  if (chartType === "group") width = cell * gridColumns;
   const labelsVisible = rows.length > 0 && (base.labels.showCategory || base.labels.showValue);
   const totalDuration = base.animation.duration + (chartType === "explosion" ? BURST_DURATION
     : chartType === "welle" ? 0
     : Math.max(labelsVisible ? 0.35 : 0, chartType === "group" && settings.animation.pulse ? GROUP_PULSE_DURATION : 0));
   return {
-    ...base, settings, type: chartType, rows, width, height, peopleCount, people, personStates, visibleGroupCount,
+    ...base, settings, type: chartType, rows, width, height, gridColumns, gridRows, peopleCount, people, personStates, visibleGroupCount,
     totalDuration, frameCount: Math.ceil(totalDuration * FPS) + 1,
     output: settings.output ?? { transparent: true },
   };
@@ -51,7 +56,7 @@ export function createChartScene(data, settings, chartType = "donut") {
 
 export function getChartLabels(scene, time = scene.totalDuration, options = {}) {
   const { labels, rows, cx, cy, outerRadius, width, height } = scene;
-  if (scene.type !== "explosion" && !labels.showCategory && !labels.showValue) return [];
+  if (!labels.showCategory && !labels.showValue) return [];
   const fontSize = value(labels.fontSize, scene.type === "explosion" ? 80 : 12);
   let cumulative = scene.rotation;
   const total = rows.reduce((sum, row) => sum + row.value, 0);
@@ -90,7 +95,7 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
     }
     if (row.visible === false) return [];
     const lines = [];
-    if (scene.type === "explosion") lines.push(text);
+    if (scene.type === "explosion") { if (labels.showCategory) lines.push(String(row.category || "")); if (labels.showValue) lines.push(text); }
     if (scene.type !== "explosion" && labels.showCategory) lines.push(String(row.category ?? ""));
     if (scene.type !== "explosion" && labels.showValue) lines.push(text);
     if (labels.layout === "inline" && lines.length > 1) lines.splice(0, lines.length, lines.join(" · "));
@@ -113,7 +118,7 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
   });
 }
 
-export function renderChartFrame(ctx, scene, time = scene.totalDuration, options = {}) {
+function renderBaseFrame(ctx, scene, time = scene.totalDuration, options = {}) {
   if (scene.type === "donut") {
     renderDonutFrame(ctx, scene, time);
   } else {
@@ -155,5 +160,30 @@ export function renderChartFrame(ctx, scene, time = scene.totalDuration, options
     ctx.fillStyle = /^#[0-9a-f]{6}$/i.test(scene.output.backgroundColor) ? scene.output.backgroundColor : "#f5f5f3";
     ctx.fillRect(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
     ctx.restore();
+  }
+}
+
+const transformCanvases = new WeakMap();
+export function getDisplayLabels(scene) {
+  const t = chartTransform(scene);
+  return getChartLabels(scene).map((label) => ({ ...label, ...transformPoint(label, t),
+    width: label.width * t.scale, height: label.height * t.scale,
+    baseWidth: label.width, baseHeight: label.height, rotation: t.angle * 180 / Math.PI }));
+}
+export function renderChartFrame(ctx, scene, time = scene.totalDuration, options = {}) {
+  const t = chartTransform(scene);
+  if ((t.scale === 1 && t.angle === 0) || !ctx.canvas?.ownerDocument) return renderBaseFrame(ctx, scene, time, options);
+  let canvas = transformCanvases.get(ctx);
+  if (!canvas) { canvas = ctx.canvas.ownerDocument.createElement("canvas"); canvas.width = VIDEO_WIDTH; canvas.height = VIDEO_HEIGHT; transformCanvases.set(ctx, canvas); }
+  const inner = canvas.getContext("2d", { alpha: true, willReadFrequently: true });
+  canvas.style.letterSpacing = "0px"; canvas.style.wordSpacing = "0px";
+  canvas.style.fontSynthesis = "none"; canvas.style.textRendering = "geometricPrecision";
+  renderBaseFrame(inner, { ...scene, output: { transparent: true } }, time, options);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+  ctx.translate(t.x * 3, t.y * 3); ctx.rotate(t.angle); ctx.scale(t.scale, t.scale);
+  ctx.drawImage(canvas, -t.x * 3, -t.y * 3); ctx.restore();
+  if (!scene.output.transparent) {
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "destination-over";
+    ctx.fillStyle = scene.output.backgroundColor || "#f5f5f3"; ctx.fillRect(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT); ctx.restore();
   }
 }

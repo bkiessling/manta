@@ -1,7 +1,8 @@
+import { chartTransform, transformPoint } from "../../charts/transform.js";
 import { useEffect, useMemo, useRef } from "react";
 import {
   VIDEO_WIDTH, VIDEO_HEIGHT, getChartContext, createChartScene,
-  renderChartFrame, getChartLabels, chartNames,
+  renderChartFrame, getDisplayLabels, chartNames,
 } from "../../charts/chartRenderer.js";
 
 export default function ChartPreview({ data, settings, chartType, playAnimation, onLabelMove }) {
@@ -38,8 +39,9 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
   }, [playAnimation, chartType, settings.diagram?.mode, style, duration, speed, bounce, groupMode, pulse]);
 
   const move = (label, x, y) => {
-    const cx = Math.max(label.width / 2 + 4, Math.min(356 - label.width / 2, x));
-    const cy = Math.max(label.height / 2 + 4, Math.min(636 - label.height / 2, y));
+    const local = transformPoint({ x, y }, chartTransform(scene), true);
+    const cx = Math.max(label.baseWidth / 2 + 4, Math.min(356 - label.baseWidth / 2, local.x));
+    const cy = Math.max(label.baseHeight / 2 + 4, Math.min(636 - label.baseHeight / 2, local.y));
     onLabelMove?.(label.id, { x: cx - label.anchorX, y: cy - label.anchorY });
   };
 
@@ -47,12 +49,12 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
     <div className="chart-preview">
       <canvas ref={canvasRef} width={VIDEO_WIDTH} height={VIDEO_HEIGHT} role="img"
         aria-label={`${chartNames[chartType]}: ${data.map((item) => `${item.category}: ${item.value}`).join(", ")}`} />
-      {onLabelMove && getChartLabels(scene).map((label) => (
+      {onLabelMove && getDisplayLabels(scene).map((label) => (
         <button key={label.id} type="button" className="chart-label-handle"
           aria-label={`Beschriftung ${label.lines.join(" ")} verschieben`}
           title="Beschriftung ziehen oder mit den Pfeiltasten verschieben"
           style={{ left: `${label.x / 360 * 100}%`, top: `${label.y / 640 * 100}%`,
-            width: `${label.width / 360 * 100}%`, height: `${label.height / 640 * 100}%` }}
+            width: `${label.width / 360 * 100}%`, height: `${label.height / 640 * 100}%`, transform: `translate(-50%, -50%) rotate(${label.rotation}deg)` }}
           onMouseDown={(event) => event.stopPropagation()}
           onPointerDown={(event) => {
             if (event.button !== 0) return;

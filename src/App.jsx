@@ -131,7 +131,7 @@ export default function App() {
         id: crypto.randomUUID(),
         category: "Neue Kategorie",
         value: chartType === "group" ? Math.min(10, Math.max(0,
-          settings.appearance.peopleCount - current.reduce((sum, row) => sum + Number(row.value || 0), 0))) : 10,
+          Math.min(100, (settings.appearance.gridColumns ?? 10) * (settings.appearance.gridRows ?? 10)) - current.reduce((sum, row) => sum + Number(row.value || 0), 0))) : 10,
         color: "#a855f7",
         visible: true,
       },
@@ -319,7 +319,7 @@ export default function App() {
               {mode === "data" &&
                 "Daten bearbeiten"}
               {mode === "editor" &&
-                "Animation"}
+                "Animation & Gestaltung"}
               {mode === "export" &&
                 "Export"}
             </h2>
@@ -339,7 +339,7 @@ export default function App() {
               addRow={addRow}
               deleteRow={deleteRow}
               mode="distribution"
-              maxTotal={chartType === "group" ? settings.appearance.peopleCount : null}
+              maxTotal={chartType === "group" ? Math.min(100, (settings.appearance.gridColumns ?? 10) * (settings.appearance.gridRows ?? 10)) : null}
               integer={chartType === "group"}
               minRows={preset.data?.minRows ?? 1}
               maxRows={preset.data?.maxRows ?? null}
@@ -363,6 +363,10 @@ export default function App() {
                 }
               />
             )}
+
+          {mode === "editor" && settings && <AppearanceSection chartType={chartType}
+            appearance={settings.appearance} minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
+            updateSetting={updateSetting} />}
 
           {mode === "export" &&
             settings && (
@@ -416,6 +420,9 @@ export default function App() {
                     {settings && <DraggableChart chartType={chartType}
                       positionX={settings.appearance.positionX ?? 50} positionY={settings.appearance.positionY ?? 50}
                       size={settings.appearance.size ?? 80} thickness={settings.appearance.thickness ?? 30}
+                      gridColumns={settings.appearance.gridColumns} gridRows={settings.appearance.gridRows}
+                      transformScale={settings.appearance.transformScale ?? 1} rotation={settings.appearance.transformRotation ?? 0}
+                      onTransformChange={(key, value) => updateSetting("appearance", key, value)}
                       onPositionChange={updateChartPosition}>{preview}</DraggableChart>}
                   </>
                 )}
@@ -436,7 +443,7 @@ export default function App() {
               {mode === "data" &&
                 "Datenoptionen"}
               {mode === "editor" &&
-                "Gestaltung"}
+                "Labels"}
               {mode === "export" &&
                 "Ausgabe"}
             </h2>
@@ -470,19 +477,7 @@ export default function App() {
             </div>
           )}
 
-          {mode === "editor" && settings && (
-            <>
-              <AppearanceSection
-                chartType={chartType}
-                appearance={settings.appearance}
-                minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
-                updateSetting={updateSetting}
-              />
-
-              <LabelsSection chartType={chartType} labels={settings.labels} updateSetting={updateSetting} />
-            </>
-          )}
-
+          {mode === "editor" && settings && <LabelsSection chartType={chartType} labels={settings.labels} updateSetting={updateSetting} />}
         </aside>
       </div>
     </main>

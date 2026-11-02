@@ -65,7 +65,7 @@ older main used for the first implementation.
   Labels start to the left of horizontal bars or below vertical columns. Each
   orientation retains its own dragged label positions. The same animation
   selector is used as for the other charts.
-- Gruppe supports 1–100 people under Editor → Gestaltung → Anzahl Personen.
+- Gruppe starts with a 10 × 10 grid. Configure Spalten and Reihen under Gestaltung.
   Each integer data value adds that many people in the category color. Empty
   or hidden slots are not drawn: there are no gray placeholders. Under Animation,
   choose **Einzeln** to reveal people one after another, or **Je Kategorie** to
@@ -143,3 +143,26 @@ clock, canvas and label dragging. `charts/chartRenderer.js` builds scenes,
 positions labels and dispatches to each renderer; `utils/exportMov.js` samples
 that same drawing path for video. Shared sidebar components edit settings, not
 chart-specific copies of state. The obsolete root `src/BarChart.jsx` was removed.
+
+## Selection transforms and sidebar layout
+
+In Editor, Animation and Appearance are on the left; Labels have their own right
+sidebar. Category and Value each use Ja/Nein segmented buttons. Label settings
+appear only when at least one is enabled, with color before font size and layout.
+Pulsing and export transparency use the same button design.
+
+Click a chart to select it. Drag its body to move it, a corner grip to resize
+proportionally, or the round rotation grip to rotate it. Escape or clicking
+outside deselects. Transformation zurücksetzen restores scale and rotation.
+Size/rotation sliders have been removed. Scale and rotation affect the chart
+and its labels together; label dragging converts pointer positions back into
+chart coordinates. The export applies the same transformation, while the output
+background stays fixed. Wave uses inset selection grips so rounded preview
+corners do not hide its handles.
+
+
+Group uses an explicit grid (default 10 columns × 10 rows), not a person-count
+setting. Data values determine the number of people, up to 100; unused cells
+stay invisible. Reducing one grid dimension automatically expands the other
+when needed to keep assigned data visible. Both dimensions are limited to 20;
+very narrow/tall layouts are proportionally fitted to the design space.
