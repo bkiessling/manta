@@ -73,7 +73,7 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
       startAt = scene.animationStyle === "spring" ? scene.animation.duration : scene.animation.duration * (cumulative - scene.rotation) / 360;
     } else if (scene.type === "welle" || scene.type === "explosion") {
       if (index > 0) return [];
-      x = 180; y = 320; startAt = 0;
+      x = 360 * value(scene.settings.appearance.positionX, 50) / 100; y = 640 * value(scene.settings.appearance.positionY, 50) / 100; startAt = 0;
       if (scene.type === "welle") text = formatChartValue(Math.round(waveValue(scene, time, options.staticPreview)), scene.settings.format);
     } else if (scene.type === "bar") {
       x = barPlot.horizontal ? barPlot.left - 40 : barPlot.left + (index + 0.5) * barPlot.step;
@@ -83,14 +83,20 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
       x = cx + (index % columns - (columns - 1) / 2) * width / columns;
       y = cy + height / 2 + 24 + Math.floor(index / columns) * fontSize * 3;
     }
+    if (scene.type === "bar" && labels.placement === "end") {
+      const extent = row.value / Math.max(1, ...rows.map((r) => r.value));
+      x = barPlot.horizontal ? barPlot.left + barPlot.width * extent + 24 : barPlot.left + (index + 0.5) * barPlot.step;
+      y = barPlot.horizontal ? barPlot.top + (index + 0.5) * barPlot.step : barPlot.top + barPlot.height * (1 - extent) - 20;
+    }
     if (row.visible === false) return [];
     const lines = [];
     if (scene.type === "explosion") lines.push(text);
     if (scene.type !== "explosion" && labels.showCategory) lines.push(String(row.category ?? ""));
     if (scene.type !== "explosion" && labels.showValue) lines.push(text);
+    if (labels.layout === "inline" && lines.length > 1) lines.splice(0, lines.length, lines.join(" · "));
     const labelWidth = Math.min(336, Math.max(32, ...lines.map((line) => line.length * fontSize * 0.7)));
     const labelHeight = lines.length * fontSize * 1.2;
-    if (barPlot?.horizontal) x = barPlot.left - 8 - labelWidth / 2;
+    if (barPlot?.horizontal && labels.placement !== "end") x = barPlot.left - 8 - labelWidth / 2;
     const minX = labelWidth / 2 + 4;
     const minY = labelHeight / 2 + 4;
     const id = scene.type === "bar" ? `${row.id}:${barPlot.horizontal ? "horizontal" : "vertical"}` : row.id;
@@ -134,7 +140,9 @@ export function renderChartFrame(ctx, scene, time = scene.totalDuration, options
   for (const label of scene.type === "explosion" ? [] : getChartLabels(scene, time, options)) {
     ctx.globalAlpha = scene.type === "welle" ? 1 : clamp((time - label.startAt) / 0.35, 0, 1);
     ctx.font = `600 ${label.fontSize}px Arial, sans-serif`;
-    label.lines.forEach((line, index) => ctx.fillText(line, label.x,
+    ctx.textAlign = scene.labels.align || "center";
+    const textX = label.x + (scene.labels.align === "left" ? -label.width / 2 : scene.labels.align === "right" ? label.width / 2 : 0);
+    label.lines.forEach((line, index) => ctx.fillText(line, textX,
       label.y + (index - (label.lines.length - 1) / 2) * label.fontSize * 1.2, 336));
   }
   ctx.restore();

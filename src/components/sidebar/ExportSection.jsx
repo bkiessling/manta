@@ -1,3 +1,4 @@
+import ToggleControl from "./ToggleControl";
 
 import { useEffect, useRef, useState } from "react";
 import { exportMov } from "../../utils/exportMov";
@@ -98,29 +99,14 @@ export default function ExportSection({
           </div>
         </div>
 
-        <label className="checkbox-control">
-          <span>TRANSPARENTER HINTERGRUND</span>
-          <input type="checkbox" checked={settings.output?.transparent !== false} disabled={isExporting}
-            onChange={(event) => updateSetting("output", "transparent", event.target.checked)} />
-        </label>
+        <ToggleControl label="Transparenter Hintergrund" checked={settings.output?.transparent !== false}
+          disabled={isExporting} onChange={(v) => updateSetting("output", "transparent", v)} />
         {settings.output?.transparent === false && <label className="control">
           <span className="control-header">HINTERGRUNDFARBE</span>
           <input type="color" aria-label="Export-Hintergrundfarbe" disabled={isExporting}
             value={settings.output.backgroundColor || "#f5f5f3"}
             onChange={(event) => updateSetting("output", "backgroundColor", event.target.value)} />
         </label>}
-
-        <div
-          className="panel-note"
-          style={{
-            marginTop: 22,
-            marginBottom: 18,
-          }}
-        >
-          Exportiere deine Animation für Premiere Pro.
-          Transparenz oder gewählte Hintergrundfarbe sowie verschobene Beschriftungen
-          werden wie in der Vorschau übernommen.
-        </div>
 
         <button
           type="button"

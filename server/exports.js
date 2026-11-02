@@ -9,13 +9,13 @@ import { randomUUID } from "node:crypto";
 
 export const LIMITS = {
   jobs: 2,
-  frames: 900,
+  frames: 18000,
   frameBytes: 8 * 1024 * 1024,
   uploadBytes: 256 * 1024 * 1024,
   outputBytes: 512 * 1024 * 1024,
   idleMs: 2 * 60_000,
-  lifetimeMs: 10 * 60_000,
-  encodeMs: 2 * 60_000,
+  lifetimeMs: 30 * 60_000,
+  encodeMs: 10 * 60_000,
 };
 
 export function httpError(status, message) {

@@ -52,8 +52,7 @@ video frames. The integration is based on main commit `16a02de`, rather than the
 older main used for the first implementation.
 
 - Donut retains hidden categories' angular space, number/percentage formatting,
-  sequential segment animation and its single-visible-category spring. Spring
-  controls remain **Geschwindigkeit** and **Federung**, as on the updated main.
+  sequential segment animation and its single-visible-category spring. Duration is entered in seconds (decimal comma supported); **Federung** controls the spring curve.
 - Welle retains fill level, wave height and speed. Its wave keeps moving in the
   preview after the fill animation; export samples a finite portion of the same
   timeline. Labels show the animated fill value.
@@ -113,12 +112,34 @@ serve frontend and `/api` on one origin. Preserve the original Host at the
 reverse proxy; a loopback HTTPS termination proxy must send
 `X-Forwarded-Proto: https`. Only loopback forwarding headers are trusted.
 
-Default limits are two active jobs, 900 frames, 8 MiB per PNG, 256 MiB total
-uploaded data, 512 MiB output and two minutes of encoding. Idle jobs expire after
-two minutes; every job expires after ten minutes. Cancellation or leaving the
+Default limits are two active jobs, 18,000 frames, 8 MiB per PNG, 256 MiB total
+uploaded data, 512 MiB output and ten minutes of encoding. Idle jobs expire after
+two minutes; every job expires after thirty minutes. Cancellation or leaving the
 export panel aborts uploads/FFmpeg and removes temporary files. Completed or
 broken downloads are cleaned up. After download starts, the browser manages
 that transfer. Capacity exhaustion returns a readable HTTP 429 response.
 
 Jobs live on one server instance. Authentication, per-user quotas, persistent
 jobs and multi-instance coordination are not implemented.
+
+
+## Editor controls and module layout
+
+All charts can be dragged in the preview; chart placement sliders have been
+removed. Labels remain a section of Editor, beside chart appearance, rather
+than a separate navigation step. Label arrangements include two lines or
+“category · value”, left/center/right alignment, and separate rows or endpoints
+for bars/columns. Manual offsets remain available in each placement.
+
+Font size and person count use common number fields; duration accepts decimal
+seconds such as `12,5`, with no five-second input cap. Export still enforces
+finite frame, storage and processing budgets (18,000 frames at 30 FPS).
+Pulse and transparent background use accessible Ja/Nein switches.
+
+Each chart directory contains a small React entry (`Donut.jsx`, `Bar.jsx`,
+`Group.jsx`, `Welle.jsx`, `Explosion.jsx`) and its `*Renderer.js` drawing code.
+The entry delegates to `components/preview/ChartPreview.jsx` for the animation
+clock, canvas and label dragging. `charts/chartRenderer.js` builds scenes,
+positions labels and dispatches to each renderer; `utils/exportMov.js` samples
+that same drawing path for video. Shared sidebar components edit settings, not
+chart-specific copies of state. The obsolete root `src/BarChart.jsx` was removed.

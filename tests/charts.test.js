@@ -47,12 +47,12 @@ test("hidden donut categories keep their original angular share and number/perce
   assert.deepEqual(getChartLabels(createChartScene(data, s, "donut"))[0].lines, ["30"]);
 });
 
-test("speed and bounce affect the single-visible-segment spring from current main", () => {
+test("duration and bounce affect the single-visible-segment spring", () => {
   const s = settings("donut");s.animation.style = "spring";
   const data = [chartData.donut[0]];
-  s.animation.speed = 0;
+  s.animation.duration = 8;
   const slow = createChartScene(data, s, "donut");
-  s.animation.speed = 100;
+  s.animation.duration = 0.6;
   const fast = createChartScene(data, s, "donut");
   assert.equal(slow.animation.duration, 8);
   assert.ok(Math.abs(fast.animation.duration - 0.6) < 0.00001);
@@ -180,4 +180,23 @@ test("optional group pulse ends at original size and is included in export durat
   assert.equal(groupPulse(pulse, pulse.animation.duration), 1);
   assert.ok(groupPulse(pulse, pulse.animation.duration + GROUP_PULSE_DURATION / 2) > 1.07);
   assert.equal(groupPulse(pulse, (pulse.frameCount - 1) / 30), 1);
+});
+
+
+test("duration accepts fractional seconds beyond the old five-second limit", () => {
+  for (const type of Object.keys(chartNames)) {
+    const s = settings(type);s.animation.duration = 12.5;
+    const scene = createChartScene(chartData[type], s, type);
+    assert.equal(scene.animation.duration, 12.5);
+    assert.ok(scene.frameCount >= 376);
+  }
+});
+
+test("inline labels place value after category and end placement follows column geometry", () => {
+  const s = settings("bar");s.labels.layout = "inline";s.labels.placement = "end";
+  s.appearance.orientation = "vertical";
+  const scene = createChartScene(chartData.bar, s, "bar");
+  const labels = getChartLabels(scene);
+  assert.deepEqual(labels[0].lines, ["Instagram · 70"]);
+  assert.ok(labels[0].y < scene.cy - scene.height / 2);
 });

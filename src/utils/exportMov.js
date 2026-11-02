@@ -85,7 +85,7 @@ export async function exportMov({ data, settings, chartType = "donut", onProgres
       method: "POST",
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000),
     });
-    const deadline = Date.now() + 150_000;
+    const deadline = Date.now() + 12 * 60_000;
     while (true) {
       checkAbort(signal);
       if (Date.now() > deadline) throw new Error("Die Videocodierung hat zu lange gedauert.");

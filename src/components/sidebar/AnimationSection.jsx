@@ -1,3 +1,5 @@
+import NumberControl from "./NumberControl";
+import ToggleControl from "./ToggleControl";
 import SegmentedControl from "./SegmentedControl";
 
 import {
@@ -180,10 +182,8 @@ export default function AnimationSection({
               options={[{ value: "individual", label: "Einzeln" }, { value: "category", label: "Je Kategorie" }]}
               onChange={(mode) => updateSetting("animation", "groupMode", mode)} />
           </div>
-          <label className="checkbox-control"><span>ZUM ABSCHLUSS PULSIEREN</span>
-            <input type="checkbox" checked={Boolean(animation.pulse)}
-              onChange={(event) => updateSetting("animation", "pulse", event.target.checked)} />
-          </label>
+          <ToggleControl label="Zum Abschluss pulsieren" checked={Boolean(animation.pulse)}
+            onChange={(v) => updateSetting("animation", "pulse", v)} />
         </>}
         {!isExplosion && (
           <div className="control">
@@ -316,61 +316,11 @@ export default function AnimationSection({
           </div>
         )}
 
-        {!isSpringAnimation && (
-          <div className="control">
-            <div className="control-header">
-              <span>DAUER</span>
-              <span>
-                {Number(
-                  animation.duration ?? 2
-                ).toFixed(1)}{" "}
-                s
-              </span>
-            </div>
-
-            <input
-              type="range"
-              min="0.5"
-              max="5"
-              step="0.1"
-              value={animation.duration ?? 2}
-              onChange={(event) =>
-                updateSetting(
-                  "animation",
-                  "duration",
-                  Number(event.target.value)
-                )
-              }
-            />
-          </div>
-        )}
+        <NumberControl label="Dauer" value={animation.duration ?? 2} min={0.1} step={0.1} unit="s"
+          onChange={(n) => updateSetting("animation", "duration", n)} />
 
         {isSpringAnimation && (
           <>
-            <div className="control">
-              <div className="control-header">
-                <span>GESCHWINDIGKEIT</span>
-                <span>
-                  {animation.speed ?? 50} %
-                </span>
-              </div>
-
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={animation.speed ?? 50}
-                onChange={(event) =>
-                  updateSetting(
-                    "animation",
-                    "speed",
-                    Number(event.target.value)
-                  )
-                }
-              />
-            </div>
-
             <div className="control">
               <div className="control-header">
                 <span>FEDERUNG</span>

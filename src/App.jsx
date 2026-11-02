@@ -413,13 +413,10 @@ export default function App() {
                   />
                 ) : (
                   <>
-                    {settings && chartType === "donut" ? (
-                      <DraggableChart positionX={settings.appearance.positionX}
-                        positionY={settings.appearance.positionY} size={settings.appearance.size}
-                        thickness={settings.appearance.thickness} onPositionChange={updateChartPosition}>
-                        {preview}
-                      </DraggableChart>
-                    ) : preview}
+                    {settings && <DraggableChart chartType={chartType}
+                      positionX={settings.appearance.positionX ?? 50} positionY={settings.appearance.positionY ?? 50}
+                      size={settings.appearance.size ?? 80} thickness={settings.appearance.thickness ?? 30}
+                      onPositionChange={updateChartPosition}>{preview}</DraggableChart>}
                   </>
                 )}
               </div>
@@ -468,14 +465,7 @@ export default function App() {
                   options={[{ value: "number", label: "Zahl" }, { value: "percent", label: "Prozent" }]}
                   onChange={updateFormat} />
 
-                <p
-                  className="panel-note"
-                  style={{ marginTop: "16px" }}
-                >
-                  {chartType === "donut"
-                    ? "Bei Prozent wird der Anteil an der Gesamtsumme angezeigt."
-                    : "Das Format verändert nur die Anzeige, nicht den eingegebenen Wert."}
-                </p>
+
               </div>
             </div>
           )}
@@ -493,12 +483,6 @@ export default function App() {
             </>
           )}
 
-          {mode === "export" && (
-            <div className="panel-note">
-              MOV mit ProRes 4444 für alle fünf Diagrammtypen.
-              Transparenz oder Hintergrundfarbe sowie verschobene Beschriftungen werden übernommen.
-            </div>
-          )}
         </aside>
       </div>
     </main>

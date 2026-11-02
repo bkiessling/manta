@@ -1412,3 +1412,20 @@
 .font-size-input { display: flex; align-items: center; gap: 10px; }
 .font-size-input input { width: 100%; min-width: 0; }
 .font-size-input > span { color: var(--text-muted); font-size: 12px; }
+
+.app, .app input, .app button, .app select { font-family: Inter, system-ui, sans-serif; }
+.number-control { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:6px; }
+.number-control input { width:100%; min-width:0; border:0; background:transparent; color:var(--text); text-align:center; font:inherit; padding:8px 0; outline:none; }
+.number-control:focus-within { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-glow); }
+.number-control button { border:0; border-radius:8px; background:var(--surface-active); color:var(--text); width:30px; height:30px; flex-shrink:0; }
+.number-control > span { font-size:12px; color:var(--text-muted); }
+.toggle-control { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; font-size:12px; cursor:pointer; }
+.toggle-track { position:relative; display:flex; align-items:center; width:70px; height:32px; flex-shrink:0; background:var(--surface-active); border-radius:20px; }
+.toggle-track input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; margin:0; z-index:2; }
+.toggle-thumb { position:absolute; left:4px; width:24px; height:24px; border-radius:50%; background:#eee; transition:transform 150ms; }
+.toggle-value { margin-left:32px; font-size:11px; color:var(--text-muted); }
+.toggle-track:has(input:checked) { background:var(--accent); }
+.toggle-track:has(input:checked) .toggle-thumb { transform:translateX(38px); }
+.toggle-track:has(input:checked) .toggle-value { margin-left:12px; color:white; }
+.toggle-track:focus-within { outline:2px solid var(--accent-bright); outline-offset:2px; }
+.app input[type=range] { accent-color:var(--accent); height:5px; border-radius:8px; cursor:pointer; }

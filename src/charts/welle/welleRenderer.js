@@ -14,11 +14,13 @@ export function renderWave(ctx, scene, time, { staticPreview = false } = {}) {
   const amplitude = Math.max(0, Number(scene.settings.appearance.waveHeight) || 0) * edge;
   const speed = 0.3 + Math.max(0, Math.min(100, Number(scene.settings.appearance.waveSpeed) || 0)) / 100 * 1.7;
   const phase = time * Math.PI * speed;
+  ctx.save();
+  ctx.translate(360 * ((scene.settings.appearance.positionX ?? 50) - 50) / 100, 640 * ((scene.settings.appearance.positionY ?? 50) - 50) / 100);
   ctx.beginPath();
   for (let x = 0; x <= 360; x += 3) {
     const y = surface + Math.sin(x / 360 * Math.PI * 4 + phase) * amplitude;
     if (!x) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
   ctx.lineTo(360, 640); ctx.lineTo(0, 640); ctx.closePath();
-  ctx.fillStyle = row.color; ctx.fill();
+  ctx.fillStyle = row.color; ctx.fill(); ctx.restore();
 }

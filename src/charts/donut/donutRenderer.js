@@ -27,9 +27,7 @@ export function getDonutContext(canvas) {
 // Sample the same Motion curve at elapsed seconds in the preview and in a video.
 export function createAnimation(animation = {}) {
   const { style = "linear" } = animation;
-  const duration = style === "spring"
-    ? 8 - clamp(number(animation.speed, 50), 0, 100) / 100 * 7.4
-    : clamp(number(animation.duration, 2), 0.1, 8);
+  const duration = Math.max(0.1, number(animation.duration, 2));
   const strength = clamp(number(animation.bounce, 35), 0, 100) / 100;
   return {
     duration,
