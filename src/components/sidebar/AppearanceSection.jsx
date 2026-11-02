@@ -13,9 +13,9 @@ export default function AppearanceSection({
   if (chartType === "explosion") {
     return (
       <div className="sidebar-section">
-        <div className="sidebar-section-title">
-          DARSTELLUNG
-        </div>
+        <h2 className="editor-section-heading">
+          Gestaltung
+        </h2>
 
         <div className="section-content">
           <div className="control">
@@ -75,9 +75,9 @@ export default function AppearanceSection({
   if (chartType === "welle") {
     return (
       <div className="sidebar-section">
-        <div className="sidebar-section-title">
-          DARSTELLUNG
-        </div>
+        <h2 className="editor-section-heading">
+          Gestaltung
+        </h2>
 
         <div className="section-content">
           <div className="control">
@@ -140,9 +140,9 @@ export default function AppearanceSection({
 
   return (
     <div className="sidebar-section">
-      <div className="sidebar-section-title">
-        DARSTELLUNG
-      </div>
+      <h2 className="editor-section-heading">
+        Gestaltung
+      </h2>
 
       <div className="section-content">
         {chartType === "donut" && (

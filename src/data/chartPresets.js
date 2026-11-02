@@ -223,3 +223,5 @@ for (const preset of Object.values(chartPresets)) {
 }
 
 chartPresets.explosion.defaults.labels.showValue = true;
+
+chartPresets.group.options.animation.styles = ["linear", "easeOut", "easeInOut"];

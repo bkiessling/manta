@@ -41,7 +41,7 @@ export default function AnimationSection({
 
   const availableStyles = (
     animationOptions?.styles ?? []
-  ).filter((style) => style !== "bounce");
+  ).filter((style) => style !== "bounce" && !(chartType === "group" && style === "spring"));
 
   const selectedStyle =
     animation.style === "spring" &&
@@ -171,10 +171,6 @@ export default function AnimationSection({
 
   return (
     <div className="sidebar-section">
-      <div className="sidebar-section-title">
-        ANIMATION
-      </div>
-
       <div className="section-content">
         {chartType === "group" && <>
           <div className="control"><div className="control-header">PERSONEN EINBLENDEN</div>

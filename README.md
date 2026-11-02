@@ -166,3 +166,11 @@ setting. Data values determine the number of people, up to 100; unused cells
 stay invisible. Reducing one grid dimension automatically expands the other
 when needed to keep assigned data visible. Both dimensions are limited to 20;
 very narrow/tall layouts are proportionally fitted to the design space.
+
+
+Sidebar typography follows the data table (12px fields and compact 38px controls).
+Animation and Gestaltung are distinct main headings, without repeated section
+captions. Grid columns/rows are plain inputs in one row, without steppers. Gruppe
+offers Linear/Sanft/Sanft (In & Out), with optional pulsing but no spring curve.
+Person icons use a filled circular head and a minimal rounded body silhouette,
+rendered as vectors at the same high-resolution canvas used for export.

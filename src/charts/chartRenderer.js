@@ -17,7 +17,7 @@ export const chartNames = { donut: "Donut", bar: "Balken", group: "Gruppe", well
 export function createChartScene(data, settings, chartType = "donut") {
   if (!chartNames[chartType]) throw new Error("Unbekannter Diagrammtyp.");
   const base = createDonutScene(data, settings);
-  if (chartType !== "donut") base.animation = createAnimation(settings.animation);
+  if (chartType !== "donut") base.animation = createAnimation(chartType === "group" && settings.animation.style === "spring" ? { ...settings.animation, style: "easeOut" } : settings.animation);
   const rows = data.map((item, index) => ({
     ...item, id: item.id ?? `row-${index}`, value: Math.max(0, value(item.value)),
     color: item.color || "#a855f7",

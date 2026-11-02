@@ -3,10 +3,10 @@ function drawPerson(ctx, x, y, width, color, scale = 1) {
   ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
   ctx.fillStyle = color;
   const u = width / 10;
-  ctx.beginPath(); ctx.arc(0, -u * 4, u * 1.4, 0, Math.PI * 2); ctx.fill();
-  for (const [x, y, w, h] of [[-1.8, -2, 3.6, 5], [-3, -1.8, 1.5, 5], [1.5, -1.8, 1.5, 5], [-1.8, 2, 1.5, 5], [0.3, 2, 1.5, 5]]) {
-    ctx.beginPath(); ctx.roundRect(x * u, y * u, w * u, h * u, u * 0.6); ctx.fill();
-  }
+  // Filled vector silhouette: circular head, rounded shoulders and one clean leg block.
+  ctx.beginPath(); ctx.arc(0, -u * 4.6, u * 1.35, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-2.1 * u, -2.7 * u, 4.2 * u, 4.5 * u, 0.8 * u); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-1.15 * u, 1.1 * u, 2.3 * u, 5.5 * u, 0.4 * u); ctx.fill();
   ctx.restore();
 }
 export const GROUP_PULSE_DURATION = 0.8;

@@ -87,8 +87,8 @@ export default function App() {
 
   useEffect(() => {
     if (
-      chartType === "donut" && settings?.animation?.style === "spring" &&
-      visibleCategoryCount !== 1
+      settings?.animation?.style === "spring" &&
+      (chartType === "group" || (chartType === "donut" && visibleCategoryCount !== 1))
     ) {
       setChartSettings((current) => ({
         ...current,
@@ -319,7 +319,7 @@ export default function App() {
               {mode === "data" &&
                 "Daten bearbeiten"}
               {mode === "editor" &&
-                "Animation & Gestaltung"}
+                "Animation"}
               {mode === "export" &&
                 "Export"}
             </h2>

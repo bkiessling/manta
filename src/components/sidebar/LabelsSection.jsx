@@ -4,7 +4,6 @@ import SegmentedControl from "./SegmentedControl";
 export default function LabelsSection({ labels, chartType, updateSetting }) {
   const primaryNumber = chartType === "explosion";
   return <div className="sidebar-section">
-    <div className="sidebar-section-title">BESCHRIFTUNG</div>
     <div className="section-content">
       <ToggleControl label="Kategorie" checked={Boolean(labels.showCategory)} onChange={(v) => updateSetting("labels", "showCategory", v)} />
       <ToggleControl label="Wert" checked={Boolean(labels.showValue)} onChange={(v) => updateSetting("labels", "showValue", v)} />
