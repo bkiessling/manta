@@ -16,7 +16,7 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
   useEffect(() => {
     sceneRef.current = scene;
     const ctx = canvasRef.current && getChartContext(canvasRef.current);
-    if (ctx) renderChartFrame(ctx, scene, playAnimation ? timeRef.current : chartType === "explosion" || chartType === "welle" ? 0 : scene.totalDuration, { staticPreview: !playAnimation });
+    if (ctx) renderChartFrame(ctx, scene, playAnimation ? timeRef.current : chartType === "explosion" || chartType === "welle" ? 0 : scene.totalDuration, { staticPreview: !playAnimation, continuous: true });
   }, [scene, playAnimation]);
 
   useEffect(() => {
@@ -25,13 +25,13 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
     let request;
     let start;
     timeRef.current = 0;
-    renderChartFrame(ctx, sceneRef.current, 0, { staticPreview: !playAnimation });
+    renderChartFrame(ctx, sceneRef.current, 0, { staticPreview: !playAnimation, continuous: true });
     const tick = (timestamp) => {
       start ??= timestamp;
       const current = sceneRef.current;
-      timeRef.current = chartType === "welle" ? (timestamp - start) / 1000 : Math.min((timestamp - start) / 1000, current.totalDuration);
-      renderChartFrame(ctx, current, timeRef.current, { staticPreview: !playAnimation });
-      if (chartType === "welle" || timeRef.current < current.totalDuration) request = requestAnimationFrame(tick);
+      timeRef.current = (chartType === "welle" || (chartType === "group" && pulse)) ? (timestamp - start) / 1000 : Math.min((timestamp - start) / 1000, current.totalDuration);
+      renderChartFrame(ctx, current, timeRef.current, { staticPreview: !playAnimation, continuous: true });
+      if (chartType === "welle" || (chartType === "group" && pulse) || timeRef.current < current.totalDuration) request = requestAnimationFrame(tick);
       else timeRef.current = Infinity;
     };
     request = requestAnimationFrame(tick);

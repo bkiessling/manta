@@ -364,10 +364,6 @@ export default function App() {
               />
             )}
 
-          {mode === "editor" && settings && <AppearanceSection chartType={chartType}
-            appearance={settings.appearance} minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
-            updateSetting={updateSetting} />}
-
           {mode === "export" &&
             settings && (
               <ExportSection
@@ -407,7 +403,7 @@ export default function App() {
                 className="phone-preview"
                 style={{
                   position: "relative",
-                  overflow: "hidden",
+                  overflow: "visible",
                 }}
               >
                 {showOnboarding ? (
@@ -460,6 +456,11 @@ export default function App() {
                 gibt es noch keine Optionen.
               </div>
             )}
+
+          {mode === "diagram" && settings && <AppearanceSection chartType={chartType}
+            appearance={settings.appearance} optionsOnly
+            minimumPeople={Math.max(1, data.reduce((sum, row) => sum + Math.round(Number(row.value) || 0), 0))}
+            updateSetting={updateSetting} />}
 
           {mode === "data" && settings && (
             <div className="sidebar-section">

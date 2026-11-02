@@ -4,7 +4,7 @@ import { createChartScene, renderChartFrame, getChartLabels, chartNames } from "
 import { chartPresets } from "../src/data/chartPresets.js";
 import { chartData } from "../src/data/chartData.js";
 import { getBarLayout } from "../src/charts/bar/barRenderer.js";
-import { groupPulse, GROUP_PULSE_DURATION } from "../src/charts/group/groupRenderer.js";
+import { groupPulse, GROUP_PULSE_DURATION, GROUP_PULSE_CYCLES } from "../src/charts/group/groupRenderer.js";
 import { waveValue } from "../src/charts/welle/welleRenderer.js";
 
 function ctx() {
@@ -21,7 +21,11 @@ function ctx() {
     fillText(text, x, y) { this.text.push({ text, x, y, alpha: this.globalAlpha }); },
   };
 }
-const settings = (type) => structuredClone(chartPresets[type].defaults);
+const settings = (type) => {
+  const s = structuredClone(chartPresets[type].defaults); s.labels.showValue = true;
+  if (type !== "explosion") s.labels.showCategory = true;
+  return s;
+};
 
 test("registry includes current main chart types and keeps the new speed/bounce controls", () => {
   assert.deepEqual(Object.keys(chartNames).sort(), ["bar", "donut", "explosion", "group", "welle"]);
@@ -37,7 +41,7 @@ test("hidden donut categories keep their original angular share and number/perce
     { id: "a", category: "A", value: 70, color: "#ff0000", visible: false },
     { id: "b", category: "B", value: 30, color: "#0000ff", visible: true },
   ];
-  const s = settings("donut");s.labels.showValue = true;
+  const s = settings("donut");s.labels.showCategory = false;s.labels.showValue = true;
   const scene = createChartScene(data, s, "donut");
   const drawn = ctx();renderChartFrame(drawn, scene);
   assert.equal(drawn.arcs.length, 1);
@@ -109,10 +113,10 @@ test("bars preserve value ratios, hidden categories and absolute number formatti
 
 test("group allocates integer counts up to 100 and leaves hidden category slots empty", () => {
   const s = settings("group");const scene = createChartScene(chartData.group, s, "group");
-  assert.equal(scene.peopleCount, 100);assert.equal(scene.people.length, 75);
+  assert.equal(scene.peopleCount, 100);assert.equal(scene.people.length, 100);
   const hidden = structuredClone(chartData.group);hidden[0].visible = false;
   const hiddenScene = createChartScene(hidden, s, "group");
-  assert.equal(hiddenScene.people.filter(Boolean).length, 25);
+  assert.equal(hiddenScene.people.filter(Boolean).length, 30);
   for (const [columns, rows, expected] of [[0, 0, 1], [3, 10, 30], [20, 20, 100]]) {
     s.appearance.gridColumns = columns;s.appearance.gridRows = rows;
     const limited = createChartScene(chartData.group, s, "group");
@@ -166,9 +170,9 @@ test("group people appear without gray placeholders individually or per category
   assert.equal(single.arcs.length, 2, "only the first two people have begun appearing");
   s.animation.groupMode = "category";scene = createChartScene(chartData.group, s, "group");
   const batch = ctx();renderChartFrame(batch, scene, scene.animation.duration * 0.02);
-  assert.equal(batch.arcs.length, 50, "the whole first category appears together");
+  assert.equal(batch.arcs.length, 70, "the whole first category appears together");
   const final = ctx();renderChartFrame(final, scene);
-  assert.equal(final.arcs.length, 75);
+  assert.equal(final.arcs.length, 100);
   assert.ok(!final.fills.includes("#b5b5bc"));
 });
 
@@ -176,9 +180,9 @@ test("optional group pulse ends at original size and is included in export durat
   const s = settings("group");const normal = createChartScene(chartData.group, s, "group");
   s.animation.pulse = true;const pulse = createChartScene(chartData.group, s, "group");
   assert.ok(pulse.totalDuration > normal.totalDuration);
-  assert.equal(pulse.totalDuration, pulse.animation.duration + GROUP_PULSE_DURATION);
+  assert.equal(pulse.totalDuration, pulse.animation.duration + GROUP_PULSE_DURATION * GROUP_PULSE_CYCLES);
   assert.equal(groupPulse(pulse, pulse.animation.duration), 1);
-  assert.ok(groupPulse(pulse, pulse.animation.duration + GROUP_PULSE_DURATION / 2) > 1.07);
+  assert.ok(groupPulse(pulse, pulse.animation.duration + GROUP_PULSE_DURATION / 2) > 1.05);
   assert.equal(groupPulse(pulse, (pulse.frameCount - 1) / 30), 1);
 });
 
@@ -197,7 +201,7 @@ test("inline labels place value after category and end placement follows column 
   s.appearance.orientation = "vertical";
   const scene = createChartScene(chartData.bar, s, "bar");
   const labels = getChartLabels(scene);
-  assert.deepEqual(labels[0].lines, ["Instagram · 70"]);
+  assert.deepEqual(labels[0].lines, ["Zustimmung 70"]);
   assert.ok(labels[0].y < scene.cy - scene.height / 2);
 });
 
@@ -222,4 +226,21 @@ test("group grid starts at 10 by 10 and uses explicit row and column geometry", 
   const scene = createChartScene(chartData.group, s, "group");
   assert.equal(scene.people.length, 75);assert.equal(scene.gridColumns, 5);
   assert.ok(Math.abs(scene.height / scene.width - 4.5) < 1e-8);
+});
+
+
+test("labels start disabled for all charts", () => {
+  for (const preset of Object.values(chartPresets)) {
+    assert.equal(preset.defaults.labels.showCategory, false);
+    assert.equal(preset.defaults.labels.showValue, false);
+  }
+});
+
+test("group pulse repeats slowly beyond the first cycle in the preview", () => {
+  const s = settings("group");s.animation.pulse = true;
+  const scene = createChartScene(chartData.group, s, "group");
+  for (const cycle of [0, 1, 2, 4]) {
+    assert.ok(groupPulse(scene, scene.animation.duration + GROUP_PULSE_DURATION * (cycle + 0.5), true) > 1.05);
+  }
+  assert.equal(groupPulse(scene, scene.totalDuration), 1);
 });

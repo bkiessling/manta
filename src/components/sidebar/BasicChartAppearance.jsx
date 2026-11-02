@@ -1,20 +1,20 @@
 import NumberControl from "./NumberControl";
 import SegmentedControl from "./SegmentedControl";
-export default function BasicChartAppearance({ chartType, appearance, updateSetting, minimumPeople = 1 }) {
+export default function BasicChartAppearance({ chartType, appearance, updateSetting, minimumPeople = 1, optionsOnly = false }) {
   const controls = [
     ...(chartType === "donut" ? [["thickness", "RINGSTÄRKE", 5, 80, "%"]] : []),
     ["gap", "ABSTAND", 0, 12, ""],
   ];
   return <div className="sidebar-section">
-    <h2 className="editor-section-heading">Gestaltung</h2>
+    {!optionsOnly && <h2 className="editor-section-heading">Gestaltung</h2>}
     <div className="section-content">
-      {chartType === "bar" && <div className="control">
+      {optionsOnly && chartType === "bar" && <div className="control">
         <div className="control-header">AUSRICHTUNG</div>
         <SegmentedControl label="Balkenausrichtung" value={appearance.orientation || "vertical"}
           options={[{ value: "horizontal", label: "Balken" }, { value: "vertical", label: "Säulen" }]}
           onChange={(orientation) => updateSetting("appearance", "orientation", orientation)} />
       </div>}
-      {chartType === "group" && <div className="grid-fields">
+      {optionsOnly && chartType === "group" && <div className="grid-fields">
         <NumberControl buttons={false} label="Spalten" min={Math.max(1, Math.ceil(minimumPeople / 20))} max={20} value={appearance.gridColumns ?? 10}
           onChange={(n) => { const count = Math.round(n); updateSetting("appearance", "gridColumns", count);
             if (count * (appearance.gridRows ?? 10) < minimumPeople) updateSetting("appearance", "gridRows", Math.ceil(minimumPeople / count)); }} />

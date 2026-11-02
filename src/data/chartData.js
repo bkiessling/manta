@@ -2,21 +2,21 @@
 export const chartData = {
   donut: [
     {
-      category: "Instagram",
+      category: "Zustimmung",
       value: 70,
-      color: "#7c3aed",
+      color: "#71C9BE",
       visible: true,
     },
     {
-      category: "Facebook",
+      category: "Ablehnung",
       value: 20,
-      color: "#a855f7",
+      color: "#B995E8",
       visible: true,
     },
     {
-      category: "WhatsApp",
+      category: "Keine Angabe",
       value: 10,
-      color: "#c084fc",
+      color: "#B7B5C0",
       visible: true,
     },
   ],
@@ -25,7 +25,7 @@ export const chartData = {
     {
       category: "Füllstand",
       value: 75,
-      color: "#7c3aed",
+      color: "#71C9BE",
       visible: true,
     },
   ],
@@ -34,14 +34,14 @@ export const chartData = {
     {
       category: "Zahl",
       value: 75,
-      color: "#7c3aed",
+      color: "#71C9BE",
       visible: true,
     },
   ],
 };
 
 chartData.bar = chartData.donut.map((row) => ({ ...row }));
-chartData.group = chartData.donut.slice(0, 2).map((row, index) => ({ ...row, value: index ? 25 : 50 }));
+chartData.group = chartData.donut.map((row) => ({ ...row }));
 for (const [type, rows] of Object.entries(chartData)) {
   rows.forEach((row, index) => { row.id = `${type}-${index}`; });
 }

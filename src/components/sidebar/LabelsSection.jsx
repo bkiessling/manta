@@ -19,7 +19,7 @@ export default function LabelsSection({ labels, chartType, updateSetting }) {
       {<>
         <div className="control"><div className="control-header">ANORDNUNG</div>
           <SegmentedControl label="Label-Anordnung" value={labels.layout || "stacked"}
-            options={[{value:"stacked",label:"Zwei Zeilen"},{value:"inline",label:"Kategorie · Wert"}]}
+            options={[{value:"stacked",label:"Zwei Zeilen"},{value:"inline",label:"Kategorie Wert"}]}
             onChange={(v) => updateSetting("labels", "layout", v)} />
         </div>
         <div className="control"><div className="control-header">AUSRICHTUNG</div>

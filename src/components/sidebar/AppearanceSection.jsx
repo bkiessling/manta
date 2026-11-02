@@ -2,20 +2,21 @@ import BasicChartAppearance from "./BasicChartAppearance";
 
 export default function AppearanceSection({
   chartType,
+  optionsOnly = false,
   appearance,
   updateSetting,
   minimumPeople = 1,
 }) {
   if (chartType === "bar" || chartType === "group") {
     return <BasicChartAppearance chartType={chartType} appearance={appearance}
-      updateSetting={updateSetting} minimumPeople={minimumPeople} />;
+      updateSetting={updateSetting} optionsOnly={optionsOnly} minimumPeople={minimumPeople} />;
   }
   if (chartType === "explosion") {
     return (
       <div className="sidebar-section">
-        <h2 className="editor-section-heading">
+        {!optionsOnly && <h2 className="editor-section-heading">
           Gestaltung
-        </h2>
+        </h2>}
 
         <div className="section-content">
           <div className="control">
@@ -75,9 +76,9 @@ export default function AppearanceSection({
   if (chartType === "welle") {
     return (
       <div className="sidebar-section">
-        <h2 className="editor-section-heading">
+        {!optionsOnly && <h2 className="editor-section-heading">
           Gestaltung
-        </h2>
+        </h2>}
 
         <div className="section-content">
           <div className="control">
@@ -140,9 +141,9 @@ export default function AppearanceSection({
 
   return (
     <div className="sidebar-section">
-      <h2 className="editor-section-heading">
+      {!optionsOnly && <h2 className="editor-section-heading">
         Gestaltung
-      </h2>
+      </h2>}
 
       <div className="section-content">
         {chartType === "donut" && (

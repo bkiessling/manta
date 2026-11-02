@@ -9,20 +9,23 @@ function drawPerson(ctx, x, y, width, color, scale = 1) {
   ctx.beginPath(); ctx.roundRect(-1.15 * u, 1.1 * u, 2.3 * u, 5.5 * u, 0.4 * u); ctx.fill();
   ctx.restore();
 }
-export const GROUP_PULSE_DURATION = 0.8;
+export const GROUP_PULSE_DURATION = 2.4;
 
-export function groupPulse(scene, time) {
+export const GROUP_PULSE_CYCLES = 3;
+
+export function groupPulse(scene, time, continuous = false) {
   if (!scene.settings.animation.pulse) return 1;
-  const t = (time - scene.animation.duration) / GROUP_PULSE_DURATION;
-  return t > 0 && t < 1 ? 1 + 0.08 * Math.sin(Math.PI * t) ** 2 : 1;
+  if (time <= scene.animation.duration || (!continuous && time >= scene.totalDuration)) return 1;
+  const t = ((time - scene.animation.duration) % GROUP_PULSE_DURATION) / GROUP_PULSE_DURATION;
+  return 1 + 0.06 * Math.sin(Math.PI * t) ** 2;
 }
 
-export function renderGroup(ctx, scene, time) {
+export function renderGroup(ctx, scene, time, options = {}) {
   const progress = scene.animation.progressAt(time);
   const columns = scene.gridColumns;
   const cell = scene.width / columns;
   const categoryMode = scene.settings.animation.groupMode === "category";
-  const pulse = groupPulse(scene, time);
+  const pulse = groupPulse(scene, time, options.continuous);
   for (const person of scene.personStates) {
     const reveal = categoryMode
       ? clamp(progress * scene.visibleGroupCount - person.categoryOrder)

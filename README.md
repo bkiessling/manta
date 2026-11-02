@@ -60,7 +60,7 @@ older main used for the first implementation.
   The complete 0.65-second particle phase is included in the export. After the
   burst, the number disappears; use Replay to watch it again.
 - Balken supports up to 12 categories, independent values and colors. Choose
-  **Balken** (horizontal) or **Säulen** (vertical) under Editor → Ausrichtung.
+  **Balken** (horizontal) or **Säulen** (vertical) under Diagramm → Diagrammoptionen → Ausrichtung.
   Lengths/heights scale to the largest value, including hidden categories.
   Labels start to the left of horizontal bars or below vertical columns. Each
   orientation retains its own dragged label positions. The same animation
@@ -70,8 +70,8 @@ older main used for the first implementation.
   or hidden slots are not drawn: there are no gray placeholders. Under Animation,
   choose **Einzeln** to reveal people one after another, or **Je Kategorie** to
   reveal each entire category together. **Zum Abschluss pulsieren** adds one
-  gentle 0.8-second pulse after the reveal, including its return to original size
-  in the exported video. Up to eight categories share the selected maximum.
+  slow pulse (2.4 seconds per cycle) after the reveal. The preview repeats it
+  continuously; export includes three complete cycles. Up to eight categories share the selected maximum.
   Reduce assigned values before lowering that maximum.
 
 Category visibility and the existing HEX color editor remain available. The
@@ -128,7 +128,7 @@ jobs and multi-instance coordination are not implemented.
 All charts can be dragged in the preview; chart placement sliders have been
 removed. Labels remain a section of Editor, beside chart appearance, rather
 than a separate navigation step. Label arrangements include two lines or
-“category · value”, left/center/right alignment, and separate rows or endpoints
+“category value”, left/center/right alignment, and separate rows or endpoints
 for bars/columns. Manual offsets remain available in each placement.
 
 Font size and person count use common number fields; duration accepts decimal
@@ -170,7 +170,15 @@ very narrow/tall layouts are proportionally fitted to the design space.
 
 Sidebar typography follows the data table (12px fields and compact 38px controls).
 Animation and Gestaltung are distinct main headings, without repeated section
-captions. Grid columns/rows are plain inputs in one row, without steppers. Gruppe
+captions. Grid columns/rows are plain inputs in one row under Diagrammoptionen, without steppers. Gruppe
 offers Linear/Sanft/Sanft (In & Out), with optional pulsing but no spring curve.
 Person icons use a filled circular head and a minimal rounded body silhouette,
 rendered as vectors at the same high-resolution canvas used for export.
+
+
+All chart-specific appearance options now live under Diagramm → Diagrammoptionen.
+Labels start disabled for every type; enable them explicitly in Editor → Labels.
+Default survey categories are Zustimmung (#71C9BE), Ablehnung (#B995E8), and
+Keine Angabe (#B7B5C0), using a pastel palette complementary to the UI purple.
+The rotation grip sits outside the selection rectangle; only the chart canvas is
+clipped to the rounded preview, so transform controls stay accessible outside it.

@@ -1,6 +1,6 @@
 import { chartTransform, transformPoint } from "./transform.js";
 import { renderBars, getBarLayout } from "./bar/barRenderer.js";
-import { renderGroup, GROUP_PULSE_DURATION } from "./group/groupRenderer.js";
+import { renderGroup, GROUP_PULSE_DURATION, GROUP_PULSE_CYCLES } from "./group/groupRenderer.js";
 import { renderWave, waveValue } from "./welle/welleRenderer.js";
 import { renderExplosion, BURST_DURATION } from "./explosion/explosionRenderer.js";
 import { formatChartValue } from "../utils/formatChartValue.js";
@@ -46,7 +46,7 @@ export function createChartScene(data, settings, chartType = "donut") {
   const labelsVisible = rows.length > 0 && (base.labels.showCategory || base.labels.showValue);
   const totalDuration = base.animation.duration + (chartType === "explosion" ? BURST_DURATION
     : chartType === "welle" ? 0
-    : Math.max(labelsVisible ? 0.35 : 0, chartType === "group" && settings.animation.pulse ? GROUP_PULSE_DURATION : 0));
+    : Math.max(labelsVisible ? 0.35 : 0, chartType === "group" && settings.animation.pulse ? GROUP_PULSE_DURATION * GROUP_PULSE_CYCLES : 0));
   return {
     ...base, settings, type: chartType, rows, width, height, gridColumns, gridRows, peopleCount, people, personStates, visibleGroupCount,
     totalDuration, frameCount: Math.ceil(totalDuration * FPS) + 1,
@@ -98,7 +98,7 @@ export function getChartLabels(scene, time = scene.totalDuration, options = {}) 
     if (scene.type === "explosion") { if (labels.showCategory) lines.push(String(row.category || "")); if (labels.showValue) lines.push(text); }
     if (scene.type !== "explosion" && labels.showCategory) lines.push(String(row.category ?? ""));
     if (scene.type !== "explosion" && labels.showValue) lines.push(text);
-    if (labels.layout === "inline" && lines.length > 1) lines.splice(0, lines.length, lines.join(" · "));
+    if (labels.layout === "inline" && lines.length > 1) lines.splice(0, lines.length, lines.join(" "));
     const labelWidth = Math.min(336, Math.max(32, ...lines.map((line) => line.length * fontSize * 0.7)));
     const labelHeight = lines.length * fontSize * 1.2;
     if (barPlot?.horizontal && labels.placement !== "end") x = barPlot.left - 8 - labelWidth / 2;
@@ -126,7 +126,7 @@ function renderBaseFrame(ctx, scene, time = scene.totalDuration, options = {}) {
     ctx.setTransform(VIDEO_WIDTH / DESIGN_WIDTH, 0, 0, VIDEO_HEIGHT / DESIGN_HEIGHT, 0, 0);
     ctx.clearRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
     if (scene.type === "bar") renderBars(ctx, scene, time);
-    if (scene.type === "group") renderGroup(ctx, scene, time);
+    if (scene.type === "group") renderGroup(ctx, scene, time, options);
     if (scene.type === "welle") renderWave(ctx, scene, time, options);
     if (scene.type === "explosion") renderExplosion(ctx, scene, time, {
       ...options, label: getChartLabels(scene, time, options)[0],
