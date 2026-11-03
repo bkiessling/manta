@@ -1,6 +1,5 @@
 
 const chartTypes = [
-  { value: "race", label: "Bar Race", icon: "bar" },
   {
     value: "donut",
     label: "Donut",
@@ -22,9 +21,15 @@ const chartTypes = [
     icon: "explosion",
   },
   { value: "group", label: "Gruppe", icon: "group" },
+  { value: "race", label: "Bar Race", icon: "race" },
 ];
 
 function ChartIcon({ type }) {
+  if (type === "race") return <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+    <rect className="mini-race-a" x="3" y="5" width="23" height="6" rx="1" />
+    <rect className="mini-race-b" x="3" y="14" width="16" height="6" rx="1" opacity=".65" />
+    <rect className="mini-race-c" x="3" y="23" width="10" height="6" rx="1" opacity=".4" />
+  </svg>;
   if (type === "group") return <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
     {[7, 16, 25].map((x) => <g key={x}><circle cx={x} cy="8" r="3" />
       <rect x={x - 3} y="13" width="6" height="9" rx="2" />
@@ -182,7 +187,7 @@ export default function ChartSection({
               }
               aria-pressed={isActive}
             >
-              <span className="chart-type-icon">
+              <span className={`chart-type-icon mini-chart-${chart.value}`} aria-hidden="true">
                 <ChartIcon type={chart.icon} />
               </span>
 

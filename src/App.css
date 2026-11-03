@@ -1474,3 +1474,28 @@
 .csv-upload input { max-width:100%; font-size:12px; }
 .csv-upload [role="alert"] { color:#a12639; }
 .data-header.race-data, .data-row.race-data { grid-template-columns:minmax(60px,1fr) 50px 54px 20px 22px 16px; }
+
+/* Tiny SVG previews need no additional canvases or animation dependencies. */
+.mini-chart-donut svg { animation:mini-donut 3.5s ease-in-out infinite; }
+.mini-chart-bar rect { transform-box:fill-box; transform-origin:center bottom; animation:mini-grow 3s ease-in-out infinite; }
+.mini-chart-bar rect:nth-child(2) { animation-delay:.15s; }
+.mini-chart-bar rect:nth-child(3) { animation-delay:.3s; }
+.mini-chart-welle svg { animation:mini-wave 2.8s ease-in-out infinite; }
+.mini-chart-explosion svg { animation:mini-burst 3s ease-out infinite; }
+.mini-chart-group g { transform-box:fill-box; transform-origin:center bottom; animation:mini-person 3s ease-in-out infinite; }
+.mini-chart-group g:nth-child(2) { animation-delay:.2s; }
+.mini-chart-group g:nth-child(3) { animation-delay:.4s; }
+.mini-race-a { animation:mini-race-a 4s ease-in-out infinite; }
+.mini-race-b { animation:mini-race-b 4s ease-in-out infinite; }
+.mini-race-c { animation:mini-race-c 4s ease-in-out infinite; }
+@keyframes mini-donut { 0%,100% { transform:rotate(-25deg) scale(.85); } 50% { transform:rotate(65deg) scale(1); } }
+@keyframes mini-grow { 0%,100% { transform:scaleY(.3); } 45%,65% { transform:scaleY(1); } }
+@keyframes mini-wave { 0%,100% { transform:translateY(3px) rotate(-4deg); } 50% { transform:translateY(-2px) rotate(4deg); } }
+@keyframes mini-burst { 0%,100% { transform:scale(.55); opacity:.4; } 45% { transform:scale(1.08); opacity:1; } 70% { transform:scale(.95); opacity:1; } }
+@keyframes mini-person { 0%,100% { transform:scale(.65); opacity:.3; } 40%,75% { transform:scale(1); opacity:1; } }
+@keyframes mini-race-a { 0%,100% { transform:translateY(0); width:23px; } 50% { transform:translateY(9px); width:16px; } }
+@keyframes mini-race-b { 0%,100% { transform:translateY(0); width:16px; } 50% { transform:translateY(-9px); width:25px; } }
+@keyframes mini-race-c { 0%,100% { width:10px; } 50% { width:19px; } }
+@media (prefers-reduced-motion:reduce) {
+  .chart-type-icon svg, .chart-type-icon rect, .chart-type-icon g { animation:none; }
+}

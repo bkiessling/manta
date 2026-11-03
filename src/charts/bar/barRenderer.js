@@ -1,10 +1,11 @@
 export function getBarLayout(scene) {
   const horizontal = scene.settings.appearance.orientation === "horizontal";
+  const labelInset = horizontal && (scene.labels.showCategory || scene.labels.showValue) && scene.labels.placement !== "end" ? 0.28 : 0;
   const left = scene.cx - scene.width / 2;
   return {
-    horizontal, left: left + (horizontal ? scene.width * 0.28 : 0),
+    horizontal, left: left + scene.width * labelInset,
     top: scene.cy - scene.height / 2,
-    width: scene.width * (horizontal ? 0.72 : 1), height: scene.height,
+    width: scene.width * (1 - labelInset), height: scene.height,
     step: (horizontal ? scene.height : scene.width) / Math.max(1, scene.rows.length),
   };
 }

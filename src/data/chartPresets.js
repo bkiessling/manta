@@ -241,3 +241,7 @@ chartPresets.donut.options.animation.styles.push("radial");
 for (const preset of Object.values(chartPresets)) {
   Object.assign(preset.defaults.animation, { delayStart: 0, delayEnd: 0, pulse: false });
 }
+
+// Larger starting composition; preview and export retain identical geometry.
+chartPresets.bar.defaults.appearance.size = 100;
+chartPresets.group.defaults.appearance.size = 100;
