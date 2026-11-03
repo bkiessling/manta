@@ -1,3 +1,4 @@
+import { renderRace } from "./bar/raceRenderer.js";
 import { chartTransform, transformPoint } from "./transform.js";
 import { renderBars, getBarLayout } from "./bar/barRenderer.js";
 import { renderGroup, GROUP_PULSE_DURATION, GROUP_PULSE_CYCLES } from "./group/groupRenderer.js";
@@ -12,7 +13,7 @@ import {
 export { getDonutContext as getChartContext, VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./donut/donutRenderer.js";
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 const value = (n, fallback = 0) => Number.isFinite(Number(n)) ? Number(n) : fallback;
-export const chartNames = { donut: "Donut", bar: "Balken", group: "Gruppe", welle: "Welle", explosion: "Explosion" };
+export const chartNames = { donut: "Donut", bar: "Balken", group: "Gruppe", welle: "Welle", explosion: "Explosion", race: "Bar Race" };
 
 export function createChartScene(data, settings, chartType = "donut") {
   if (!chartNames[chartType]) throw new Error("Unbekannter Diagrammtyp.");
@@ -44,19 +45,22 @@ export function createChartScene(data, settings, chartType = "donut") {
   const height = chartType === "group" ? cell * gridRows * 1.5 : width;
   if (chartType === "group") width = cell * gridColumns;
   const labelsVisible = rows.length > 0 && (base.labels.showCategory || base.labels.showValue);
-  const totalDuration = base.animation.duration + (chartType === "explosion" ? BURST_DURATION
-    : chartType === "welle" ? 0
-    : Math.max(labelsVisible ? 0.35 : 0, chartType === "group" && settings.animation.pulse ? GROUP_PULSE_DURATION * GROUP_PULSE_CYCLES : 0));
+  const delayStart = Math.max(0, value(settings.animation.delayStart));
+  const delayEnd = Math.max(0, value(settings.animation.delayEnd));
+  const pulseStart = base.animation.duration + (chartType === "explosion" ? BURST_DURATION : 0);
+  const contentDuration = pulseStart + Math.max(
+    chartType !== "explosion" && chartType !== "welle" && labelsVisible ? 0.35 : 0,
+    settings.animation.pulse ? GROUP_PULSE_DURATION * GROUP_PULSE_CYCLES : 0);
   return {
     ...base, settings, type: chartType, rows, width, height, gridColumns, gridRows, peopleCount, people, personStates, visibleGroupCount,
-    totalDuration, frameCount: Math.ceil(totalDuration * FPS) + 1,
+    delayStart, delayEnd, pulseStart, contentDuration, totalDuration: delayStart + contentDuration + delayEnd, frameCount: Math.ceil((delayStart + contentDuration + delayEnd) * FPS) + 1,
     output: settings.output ?? { transparent: true },
   };
 }
 
 export function getChartLabels(scene, time = scene.totalDuration, options = {}) {
   const { labels, rows, cx, cy, outerRadius, width, height } = scene;
-  if (!labels.showCategory && !labels.showValue) return [];
+  if (scene.type === "race" || (!labels.showCategory && !labels.showValue)) return [];
   const fontSize = value(labels.fontSize, scene.type === "explosion" ? 80 : 12);
   let cumulative = scene.rotation;
   const total = rows.reduce((sum, row) => sum + row.value, 0);
@@ -125,6 +129,7 @@ function renderBaseFrame(ctx, scene, time = scene.totalDuration, options = {}) {
     ctx.save();
     ctx.setTransform(VIDEO_WIDTH / DESIGN_WIDTH, 0, 0, VIDEO_HEIGHT / DESIGN_HEIGHT, 0, 0);
     ctx.clearRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
+    if (scene.type === "race") renderRace(ctx, scene, time);
     if (scene.type === "bar") renderBars(ctx, scene, time);
     if (scene.type === "group") renderGroup(ctx, scene, time, options);
     if (scene.type === "welle") renderWave(ctx, scene, time, options);
@@ -171,7 +176,16 @@ export function getDisplayLabels(scene) {
     baseWidth: label.width, baseHeight: label.height, rotation: t.angle * 180 / Math.PI }));
 }
 export function renderChartFrame(ctx, scene, time = scene.totalDuration, options = {}) {
+  const elapsed = Math.max(0, time - scene.delayStart);
+  const localTime = options.staticPreview ? (scene.type === "race" ? 0 : scene.contentDuration) : Math.min(elapsed, scene.contentDuration);
+  // A finite pulse phase is followed by a held final frame in preview and export.
   const t = chartTransform(scene);
+  if (scene.type !== "group" && scene.settings.animation.pulse && localTime > scene.pulseStart) {
+    const phase = Math.min(GROUP_PULSE_DURATION * GROUP_PULSE_CYCLES, localTime - scene.pulseStart);
+    t.scale *= 1 + 0.06 * Math.sin(Math.PI * phase / GROUP_PULSE_DURATION) ** 2;
+  }
+  time = localTime;
+  options = { ...options, continuous: false };
   if ((t.scale === 1 && t.angle === 0) || !ctx.canvas?.ownerDocument) return renderBaseFrame(ctx, scene, time, options);
   let canvas = transformCanvases.get(ctx);
   if (!canvas) { canvas = ctx.canvas.ownerDocument.createElement("canvas"); canvas.width = VIDEO_WIDTH; canvas.height = VIDEO_HEIGHT; transformCanvases.set(ctx, canvas); }

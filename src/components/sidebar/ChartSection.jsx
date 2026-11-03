@@ -1,5 +1,6 @@
 
 const chartTypes = [
+  { value: "race", label: "Bar Race", icon: "bar" },
   {
     value: "donut",
     label: "Donut",

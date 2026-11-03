@@ -28,7 +28,7 @@ const settings = (type) => {
 };
 
 test("registry includes current main chart types and keeps the new speed/bounce controls", () => {
-  assert.deepEqual(Object.keys(chartNames).sort(), ["bar", "donut", "explosion", "group", "welle"]);
+  assert.deepEqual(Object.keys(chartNames).sort(), ["bar", "donut", "explosion", "group", "race", "welle"]);
   for (const type of Object.keys(chartNames)) {
     assert.ok(chartData[type].length > 0);
     assert.equal(chartPresets[type].defaults.animation.speed, 50);
@@ -127,6 +127,7 @@ test("group allocates integer counts up to 100 and leaves hidden category slots 
 test("all chart types retain stable draggable labels and selectable backgrounds", () => {
   for (const type of Object.keys(chartNames)) {
     const s = settings(type);s.labels.showCategory = true;s.labels.showValue = true;
+    if (type === "race") continue; // Race labels follow their moving bars; covered separately.
     const original = getChartLabels(createChartScene(chartData[type], s, type))[0];
     s.labels.positions[original.id] = { x: -10, y: 20 };
     const moved = getChartLabels(createChartScene(chartData[type], s, type))[0];
@@ -231,6 +232,7 @@ test("group grid starts at 10 by 10 and uses explicit row and column geometry", 
 
 test("labels start disabled for all charts", () => {
   for (const preset of Object.values(chartPresets)) {
+    if (preset === chartPresets.race) continue; // Race needs category identity visible by default.
     assert.equal(preset.defaults.labels.showCategory, false);
     assert.equal(preset.defaults.labels.showValue, false);
   }

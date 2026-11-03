@@ -1,3 +1,4 @@
+import { snapRotation } from "../../charts/transform.js";
 import { useEffect, useRef, useState } from "react";
 export default function DraggableChart({ children, chartType, positionX, positionY, size,
   gridColumns = 10, gridRows = 10, transformScale = 1, rotation = 0, onTransformChange, onPositionChange }) {
@@ -26,7 +27,7 @@ export default function DraggableChart({ children, chartType, positionX, positio
     const y = (event.clientY - rect.top) / rect.height * 640;
     if (d.mode === "move") onPositionChange(Math.max(-50, Math.min(150, d.px + (x - d.x) / 3.6)), Math.max(-50, Math.min(150, d.py + (y - d.y) / 6.4)));
     if (d.mode === "scale") onTransformChange("transformScale", Math.max(0.1, Math.min(4, d.scale * Math.hypot(x - d.px * 3.6, y - d.py * 6.4) / d.distance)));
-    if (d.mode === "rotate") onTransformChange("transformRotation", d.rotation + (Math.atan2(y - d.py * 6.4, x - d.px * 3.6) - d.angle) * 180 / Math.PI);
+    if (d.mode === "rotate") onTransformChange("transformRotation", snapRotation(d.rotation + (Math.atan2(y - d.py * 6.4, x - d.px * 3.6) - d.angle) * 180 / Math.PI));
   };
   const cell = Math.min(size * 2.8 / gridColumns, 420 * size / 100 / (gridRows * 1.5));
   const width = chartType === "welle" ? 312 : chartType === "donut" ? size * 4.8 : chartType === "explosion" ? 150 : chartType === "group" ? cell * gridColumns : size * 2.8;
@@ -38,7 +39,12 @@ export default function DraggableChart({ children, chartType, positionX, positio
       onClick={() => { onTransformChange("transformScale", 1); onTransformChange("transformRotation", 0); }}>Transformation zurücksetzen</button>}
     {selected && <div className="transform-box" style={{ left: `${positionX}%`, top: `${positionY}%`, width: `${width * transformScale / 3.6}%`, height: `${height * transformScale / 6.4}%`, transform: `translate(-50%, -50%) rotate(${rotation}deg)` }}>
       {["nw", "ne", "sw", "se"].map((corner) => <button key={corner} type="button" className={`transform-grip ${corner}`} aria-label={`Chart proportional skalieren ${corner}`} onPointerDown={(e) => start(e, "scale")} />)}
-      <button type="button" className="transform-rotate" aria-label="Chart drehen" onPointerDown={(e) => start(e, "rotate")}>↻</button>
+      <button type="button" className="transform-rotate" aria-label="Chart drehen" onPointerDown={(e) => start(e, "rotate")}
+        onKeyDown={(e) => { if (["ArrowLeft", "ArrowRight"].includes(e.key)) { e.preventDefault(); e.stopPropagation();
+          onTransformChange("transformRotation", snapRotation(rotation + (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 90 : 6))); } }}>
+        <svg viewBox="0 0 32 24" width="32" height="24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M5 17C5 2 27 2 27 17M1 12l4 5 5-4M22 13l5 4 4-5" />
+        </svg><span>{Math.round(rotation)}°</span></button>
     </div>}
   </div>;
 }

@@ -11,3 +11,9 @@ export function transformPoint(point, t, inverse = false) {
   return { x: t.x + (x * Math.cos(angle) - y * Math.sin(angle)) * scale,
     y: t.y + (x * Math.sin(angle) + y * Math.cos(angle)) * scale };
 }
+
+export function snapRotation(angle) {
+  const normalized = ((angle % 360) + 360) % 360;
+  const nearest = Math.round(normalized / 90) * 90;
+  return Math.abs(normalized - nearest) <= 5 ? nearest : normalized;
+}

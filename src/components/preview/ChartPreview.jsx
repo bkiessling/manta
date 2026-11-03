@@ -11,7 +11,7 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
   const timeRef = useRef(0);
   const dragRef = useRef(null);
   const scene = useMemo(() => createChartScene(data, settings, chartType), [data, settings, chartType]);
-  const { style, duration, speed, bounce, groupMode, pulse } = settings.animation;
+  const { style, duration, speed, bounce, groupMode, pulse, delayStart, delayEnd } = settings.animation;
 
   useEffect(() => {
     sceneRef.current = scene;
@@ -21,7 +21,7 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
 
   useEffect(() => {
     const ctx = canvasRef.current && getChartContext(canvasRef.current);
-    if (!ctx || (!playAnimation && chartType !== "welle")) return;
+    if (!ctx || !playAnimation) return;
     let request;
     let start;
     timeRef.current = 0;
@@ -29,14 +29,14 @@ export default function ChartPreview({ data, settings, chartType, playAnimation,
     const tick = (timestamp) => {
       start ??= timestamp;
       const current = sceneRef.current;
-      timeRef.current = (chartType === "welle" || (chartType === "group" && pulse)) ? (timestamp - start) / 1000 : Math.min((timestamp - start) / 1000, current.totalDuration);
+      timeRef.current = Math.min((timestamp - start) / 1000, current.totalDuration);
       renderChartFrame(ctx, current, timeRef.current, { staticPreview: !playAnimation, continuous: true });
-      if (chartType === "welle" || (chartType === "group" && pulse) || timeRef.current < current.totalDuration) request = requestAnimationFrame(tick);
+      if (timeRef.current < current.totalDuration) request = requestAnimationFrame(tick);
       else timeRef.current = Infinity;
     };
     request = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(request);
-  }, [playAnimation, chartType, settings.diagram?.mode, style, duration, speed, bounce, groupMode, pulse]);
+  }, [playAnimation, chartType, settings.diagram?.mode, style, duration, speed, bounce, groupMode, pulse, delayStart, delayEnd]);
 
   const move = (label, x, y) => {
     const local = transformPoint({ x, y }, chartTransform(scene), true);

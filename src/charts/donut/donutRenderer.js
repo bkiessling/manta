@@ -99,15 +99,18 @@ export function renderDonutFrame(ctx, scene, time = scene.totalDuration) {
   ctx.clearRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
   for (const segment of segments) {
     if (segment.visible === false) continue;
+    const radial = scene.settings?.animation.style === "radial";
     const isSpring = scene.animationStyle === "spring";
+    const radialT = clamp((time / animation.duration - (segment.start - scene.rotation) / 360 * 0.25) / 0.75, 0, 1);
+    const radialScale = radialT === 0 ? 0 : 1 + 2.70158 * (radialT - 1) ** 3 + 1.70158 * (radialT - 1) ** 2;
     const delay = isSpring ? 0 : animation.duration * (segment.start - scene.rotation) / 360;
     const progress = animation.progressAt(isSpring ? time : (time - delay) / segment.percentage);
-    const end = segment.start + Math.min(359.999, (segment.end - segment.start) * progress);
-    if (end <= segment.start) continue;
+    const end = segment.start + Math.min(359.999, (segment.end - segment.start) * (radial ? 1 : progress));
+    if (end <= segment.start || (radial && radialScale <= 0)) continue;
     ctx.beginPath();
-    ctx.arc(cx, cy, outerRadius - thickness / 2, radians(segment.start), radians(end));
+    ctx.arc(cx, cy, (outerRadius - thickness / 2) * (radial ? radialScale : 1), radians(segment.start), radians(end));
     ctx.strokeStyle = segment.color;
-    ctx.lineWidth = thickness;
+    ctx.lineWidth = thickness * (radial ? radialScale : 1);
     ctx.lineCap = "butt";
     ctx.stroke();
   }

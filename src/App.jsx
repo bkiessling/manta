@@ -18,7 +18,7 @@ import AppearanceSection from "./components/sidebar/AppearanceSection";
 import AnimationSection from "./components/sidebar/AnimationSection";
 import ExportSection from "./components/sidebar/ExportSection";
 
-import OnboardingPreview from "./components/onboarding/OnboardingPreview";
+import ChartPreview from "./components/preview/ChartPreview";
 import DraggableChart from "./components/preview/DraggableChart";
 
 import mantaRay from "./assets/manta_ray.svg";
@@ -50,8 +50,6 @@ const MODES = [
 
 export default function App() {
   const [mode, setMode] = useState("diagram");
-  const [onboardingStep, setOnboardingStep] =
-    useState("diagram");
 
   const [replay, setReplay] = useState(0);
   const [playAnimation, setPlayAnimation] =
@@ -134,6 +132,7 @@ export default function App() {
           Math.min(100, (settings.appearance.gridColumns ?? 10) * (settings.appearance.gridRows ?? 10)) - current.reduce((sum, row) => sum + Number(row.value || 0), 0))) : 10,
         color: "#a855f7",
         visible: true,
+        ...(chartType === "race" ? { time: 2020 } : {}),
       },
     ]);
   };
@@ -183,7 +182,7 @@ export default function App() {
     }));
   };
   const Chart = { donut: Donut, bar: Bar, group: Group, welle: Welle, explosion: Explosion }[chartType];
-  const preview = settings && Chart ? <Chart key={`${chartType}-${replay}`} data={data}
+  const preview = chartType === "race" ? <ChartPreview key={`${chartType}-${replay}`} chartType="race" data={data} settings={settings} playAnimation={playAnimation} /> : settings && Chart ? <Chart key={`${chartType}-${replay}`} data={data}
     settings={settings} playAnimation={playAnimation} onLabelMove={moveLabel} /> : null;
 
   const updateFormat = (value) => {
@@ -220,41 +219,19 @@ export default function App() {
   const changeMode = (value) => {
     setMode(value);
 
-    if (onboardingStep === "complete") {
-      return;
-    }
-
-    if (
-      value === "editor" ||
-      value === "export"
-    ) {
-      setOnboardingStep("complete");
+    if (value === "editor" || value === "export") {
       setPlayAnimation(true);
       setReplay((current) => current + 1);
-    } else {
-      setOnboardingStep(value);
     }
-  };
 
-  const nextOnboardingStep = () => {
-    if (onboardingStep === "diagram") {
-      changeMode("data");
-    } else if (onboardingStep === "data") {
-      changeMode("editor");
-    }
   };
 
   const replayAnimation = () => {
-    if (onboardingStep !== "complete") {
-      return;
-    }
-
     setPlayAnimation(true);
     setReplay((current) => current + 1);
   };
 
-  const showOnboarding =
-    onboardingStep !== "complete";
+
 
   return (
     <main className="app">
@@ -339,6 +316,7 @@ export default function App() {
               addRow={addRow}
               deleteRow={deleteRow}
               mode="distribution"
+              chartType={chartType}
               maxTotal={chartType === "group" ? Math.min(100, (settings.appearance.gridColumns ?? 10) * (settings.appearance.gridRows ?? 10)) : null}
               integer={chartType === "group"}
               minRows={preset.data?.minRows ?? 1}
@@ -387,13 +365,8 @@ export default function App() {
                   type="button"
                   className="replay-button"
                   onClick={replayAnimation}
-                  disabled={showOnboarding}
                   aria-label="Animation erneut abspielen"
-                  title={
-                    showOnboarding
-                      ? "Vorschau ab dem Editor verfügbar"
-                      : "Animation erneut abspielen"
-                  }
+                  title="Animation erneut abspielen"
                 >
                   ↻
                 </button>
@@ -406,13 +379,6 @@ export default function App() {
                   overflow: "visible",
                 }}
               >
-                {showOnboarding ? (
-                  <OnboardingPreview
-                    step={onboardingStep}
-                    onNext={nextOnboardingStep}
-                  />
-                ) : (
-                  <>
                     {settings && <DraggableChart chartType={chartType}
                       positionX={settings.appearance.positionX ?? 50} positionY={settings.appearance.positionY ?? 50}
                       size={settings.appearance.size ?? 80} thickness={settings.appearance.thickness ?? 30}
@@ -420,8 +386,6 @@ export default function App() {
                       transformScale={settings.appearance.transformScale ?? 1} rotation={settings.appearance.transformRotation ?? 0}
                       onTransformChange={(key, value) => updateSetting("appearance", key, value)}
                       onPositionChange={updateChartPosition}>{preview}</DraggableChart>}
-                  </>
-                )}
               </div>
             </div>
           </div>
@@ -449,7 +413,7 @@ export default function App() {
             ![
               "donut",
               "welle",
-              "explosion", "bar", "group",
+              "explosion", "bar", "group", "race",
             ].includes(chartType) && (
               <div className="panel-note">
                 Für diesen Diagrammtyp

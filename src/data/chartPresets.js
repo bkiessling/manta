@@ -230,3 +230,14 @@ for (const preset of Object.values(chartPresets)) {
   preset.defaults.labels.showCategory = false;
   preset.defaults.labels.showValue = false;
 }
+
+chartPresets.race = structuredClone(chartPresets.bar);
+chartPresets.race.data.maxRows = 2000;
+chartPresets.race.defaults.animation.duration = 10;
+chartPresets.race.defaults.labels.showCategory = true;
+chartPresets.race.defaults.labels.showValue = true;
+chartPresets.race.options.animation.styles = ["linear", "easeOut", "easeInOut"];
+chartPresets.donut.options.animation.styles.push("radial");
+for (const preset of Object.values(chartPresets)) {
+  Object.assign(preset.defaults.animation, { delayStart: 0, delayEnd: 0, pulse: false });
+}

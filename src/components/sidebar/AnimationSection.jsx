@@ -13,6 +13,7 @@ const animationLabels = {
   easeOut: "Sanft",
   easeInOut: "Sanft (In & Out)",
   spring: "Federnd",
+  radial: "Aus der Mitte",
 };
 
 export default function AnimationSection({
@@ -178,8 +179,7 @@ export default function AnimationSection({
               options={[{ value: "individual", label: "Einzeln" }, { value: "category", label: "Je Kategorie" }]}
               onChange={(mode) => updateSetting("animation", "groupMode", mode)} />
           </div>
-          <ToggleControl label="Zum Abschluss pulsieren" checked={Boolean(animation.pulse)}
-            onChange={(v) => updateSetting("animation", "pulse", v)} />
+
         </>}
         {!isExplosion && (
           <div className="control">
@@ -312,6 +312,12 @@ export default function AnimationSection({
           </div>
         )}
 
+        <ToggleControl label="Zum Abschluss pulsieren" checked={Boolean(animation.pulse)}
+          onChange={(v) => updateSetting("animation", "pulse", v)} />
+        <NumberControl label="Delay Start" value={animation.delayStart ?? 0} min={0} step={0.1} unit="s"
+          onChange={(n) => updateSetting("animation", "delayStart", n)} />
+        <NumberControl label="Delay Ende" value={animation.delayEnd ?? 0} min={0} step={0.1} unit="s"
+          onChange={(n) => updateSetting("animation", "delayEnd", n)} />
         <NumberControl label="Dauer" value={animation.duration ?? 2} min={0.1} step={0.1} unit="s"
           onChange={(n) => updateSetting("animation", "duration", n)} />
 

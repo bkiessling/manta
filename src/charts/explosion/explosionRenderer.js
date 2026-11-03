@@ -12,8 +12,8 @@ export function renderExplosion(ctx, scene, time, { staticPreview = false, label
   const size = scene.labels.fontSize ?? 80;
   const x = label?.x ?? 180; const y = label?.y ?? 320;
   const duration = scene.animation.duration;
-  if (staticPreview || time < duration) {
-    const t = staticPreview ? 0 : Math.max(0, time / duration);
+  if (staticPreview || time < duration || (scene.settings.animation.pulse && time >= duration + BURST_DURATION)) {
+    const t = staticPreview ? 0 : Math.min(1, Math.max(0, time / duration));
     const scale = 1 + Math.max(0, Math.min(200, growth)) / 100 * t;
     ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
     ctx.fillStyle = scene.labels.color || row.color; ctx.strokeStyle = scene.labels.color || row.color;

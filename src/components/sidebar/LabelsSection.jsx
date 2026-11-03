@@ -13,10 +13,10 @@ export default function LabelsSection({ labels, chartType, updateSetting }) {
           onChange={(event) => updateSetting("labels", "color", event.target.value)} />
       </label>
       <NumberControl label="Schriftgröße" value={labels.fontSize ?? (primaryNumber ? 80 : 12)} min={8} max={180} unit="px" onChange={(n) => updateSetting("labels", "fontSize", n)} />
-      <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
+      {chartType !== "race" && <button type="button" className="add-row" onClick={() => updateSetting("labels", "positions", {})}>
         Beschriftungen zurücksetzen
-      </button>
-      {<>
+      </button>}
+      {chartType !== "race" && <>
         <div className="control"><div className="control-header">ANORDNUNG</div>
           <SegmentedControl label="Label-Anordnung" value={labels.layout || "stacked"}
             options={[{value:"stacked",label:"Zwei Zeilen"},{value:"inline",label:"Kategorie Wert"}]}

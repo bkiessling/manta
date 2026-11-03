@@ -15,7 +15,7 @@ export const GROUP_PULSE_CYCLES = 3;
 
 export function groupPulse(scene, time, continuous = false) {
   if (!scene.settings.animation.pulse) return 1;
-  if (time <= scene.animation.duration || (!continuous && time >= scene.totalDuration)) return 1;
+  if (time <= scene.animation.duration || (!continuous && time >= (scene.contentDuration ?? scene.totalDuration))) return 1;
   const t = ((time - scene.animation.duration) % GROUP_PULSE_DURATION) / GROUP_PULSE_DURATION;
   return 1 + 0.06 * Math.sin(Math.PI * t) ** 2;
 }

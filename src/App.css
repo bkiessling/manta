@@ -1466,3 +1466,11 @@
 
 .chart-preview { border-radius:26px; overflow:hidden; }
 .onboarding-preview { border-radius:inherit; overflow:hidden; }
+
+.transform-rotate { top:-46px; left:calc(50% - 30px); width:60px; height:40px; display:flex; align-items:center; flex-direction:column; border:0; border-radius:0; background:transparent; font-size:11px; }
+.transform-rotate:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.csv-upload { font-size:12px; line-height:1.5; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #ddd; }
+.csv-upload pre { white-space:pre-wrap; background:#f4eefb; padding:10px; border-radius:8px; }
+.csv-upload input { max-width:100%; font-size:12px; }
+.csv-upload [role="alert"] { color:#a12639; }
+.data-header.race-data, .data-row.race-data { grid-template-columns:minmax(60px,1fr) 50px 54px 20px 22px 16px; }

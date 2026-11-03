@@ -70,8 +70,7 @@ older main used for the first implementation.
   or hidden slots are not drawn: there are no gray placeholders. Under Animation,
   choose **Einzeln** to reveal people one after another, or **Je Kategorie** to
   reveal each entire category together. **Zum Abschluss pulsieren** adds one
-  slow pulse (2.4 seconds per cycle) after the reveal. The preview repeats it
-  continuously; export includes three complete cycles. Up to eight categories share the selected maximum.
+  slow pulse (2.4 seconds per cycle) after the reveal. Preview and export include three complete cycles. Up to eight categories share the selected maximum.
   Reduce assigned values before lowering that maximum.
 
 Category visibility and the existing HEX color editor remain available. The
@@ -178,7 +177,26 @@ rendered as vectors at the same high-resolution canvas used for export.
 
 All chart-specific appearance options now live under Diagramm → Diagrammoptionen.
 Labels start disabled for every type; enable them explicitly in Editor → Labels.
-Default survey categories are Zustimmung (#71C9BE), Ablehnung (#B995E8), and
-Keine Angabe (#B7B5C0), using a pastel palette complementary to the UI purple.
+Default survey categories are Zustimmung (#a855f7), Ablehnung (#71C9BE), and
+Keine Angabe (#D4D3DA), using a pastel palette complementary to the UI purple.
 The rotation grip sits outside the selection rectangle; only the chart canvas is
 clipped to the rounded preview, so transform controls stay accessible outside it.
+
+## CSV, Bar Race and animation timing
+
+The real chart preview is available from Diagramm onward. Default colors are
+app purple (`#a855f7`), turquoise (`#71C9BE`) and light gray (`#D4D3DA`).
+In Daten, CSV imports require `kategorie,wert`; Bar Race requires
+`kategorie,wert,zeit`, with numeric times such as years and at least two time
+points. Comma and semicolon delimiters, quoted fields and decimal commas in
+semicolon CSVs are supported. Headers, values, duplicate category/time pairs
+and chart limits are checked before replacing data. Missing race categories at
+a time point have value zero. Ten example categories across 2020–2024 are included.
+
+Delay Start holds the initial frame; Delay Ende holds the completed animation.
+Pulsing adds three 2.4-second cycles after the main animation for all charts;
+Explosion shows its number again for this final pulse phase. Preview and MOV
+export use the same finite timeline. Donut's “Aus der Mitte” movement scales
+whole segments outward with a small overshoot. Rotation shows degrees and snaps
+within five degrees of each quadrant; arrow keys adjust rotation and Shift+Arrow
+moves to the next quadrant.

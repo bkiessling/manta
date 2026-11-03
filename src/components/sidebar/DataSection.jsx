@@ -1,6 +1,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import CsvUpload from "./CsvUpload";
+
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 function normalizeHex(value) {
@@ -185,6 +187,7 @@ export default function DataSection({
   mode = "distribution",
   maxTotal = null,
   integer = false,
+  chartType,
 }) {
   const isProgress = mode === "progress";
 
@@ -244,8 +247,10 @@ export default function DataSection({
       </div>
 
       <div className="section-content">
+        <CsvUpload key={chartType} onImport={setData} race={chartType === "race"} minRows={minRows} maxRows={maxRows}
+          minValue={minValue} maxValue={maxValue} maxTotal={maxTotal} integer={integer} />
         <div
-          className={`data-header ${
+          className={`data-header ${chartType === "race" ? "race-data" : ""} ${
             !isProgress
               ? "data-header-with-visibility"
               : ""
@@ -253,6 +258,7 @@ export default function DataSection({
         >
           <span>KATEGORIE</span>
           <span>WERT</span>
+          {chartType === "race" && <span>ZEIT</span>}
           <span />
           {!isProgress && <span />}
           <span />
@@ -270,7 +276,7 @@ export default function DataSection({
 
             return (
               <div
-                className={`data-row ${
+                className={`data-row ${chartType === "race" ? "race-data" : ""} ${
                   !isProgress
                     ? "data-row-with-visibility"
                     : ""
@@ -324,6 +330,8 @@ export default function DataSection({
                   }
                 />
 
+                {chartType === "race" && <input type="number" value={item.time ?? 2020} aria-label={`Zeit für ${item.category}`}
+                  onChange={(event) => updateRow(index, "time", event.target.value === "" ? "" : Number(event.target.value))} />}
                 <ColorEditor
                   color={item.color}
                   category={

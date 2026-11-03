@@ -7,7 +7,7 @@ export default function AppearanceSection({
   updateSetting,
   minimumPeople = 1,
 }) {
-  if (chartType === "bar" || chartType === "group") {
+  if (chartType === "bar" || chartType === "race" || chartType === "group") {
     return <BasicChartAppearance chartType={chartType} appearance={appearance}
       updateSetting={updateSetting} optionsOnly={optionsOnly} minimumPeople={minimumPeople} />;
   }
